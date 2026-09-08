@@ -7,7 +7,7 @@ HTML you can host on GitHub Pages (or any static host).
 
 ## Files
 
-- `short-form-learning-tracker.html` — the board (Kanban + Timeline views)
+- `index.html` — the board (Kanban + Timeline views)
 - `new-project.html` — the full "new project" intake form (also used for editing)
 - `data-client.js` — shared code that talks to Firestore (used by both pages)
 - `firebase-config.js` — **you edit this** with your own project's config
@@ -59,7 +59,9 @@ In your repo: **Settings → Pages → Source → Deploy from a branch**, pick
 `https://yourname.github.io/your-repo/`.
 
 ### 8. Open it
-Visit `https://yourname.github.io/your-repo/short-form-learning-tracker.html`.
+Visit `https://yourname.github.io/your-repo/` — since the board is now
+named `index.html`, it loads automatically without needing the filename
+in the URL.
 The first load will seed a few example projects into your database
 automatically. Anyone with the link can view and edit the board.
 

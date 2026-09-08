@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Short Form Learning — Build Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D0D0F;
+    --panel:#17171A;
+    --panel-alt:#1D1D21;
+    --border:rgba(255,255,255,0.09);
+    --border-strong:rgba(255,255,255,0.18);
+    --text:#F2F2F0;
+    --text-soft:#9A9A9A;
+    --text-faint:#8A8A8A;
+    --gold:#E0A73A;
+    --gold-soft:rgba(224,167,58,0.14);
+    --gold-ink:#1A1408;
+    --teal:#4FBFA8;
+    --teal-soft:rgba(79,191,168,0.14);
+    --red:#E2735A;
+    --red-soft:rgba(226,115,90,0.14);
+    --lavender:#9C8FC9;
+    --lavender-soft:rgba(156,143,201,0.14);
+    --font:'Inter', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+
+  .topbar{
+    display:flex; align-items:center; gap:14px;
+    padding:16px 28px; border-bottom:1px solid var(--border);
+    background:var(--bg);
+  }
+  .brand-mark{
+    width:34px; height:34px; border-radius:8px; background:var(--gold);
+    color:var(--gold-ink); font-weight:800; font-size:13px;
+    display:flex; align-items:center; justify-content:center; flex:none;
+  }
+  .brand-text{ display:flex; flex-direction:column; line-height:1.2; }
+  .brand-text strong{ font-size:14.5px; font-weight:600; }
+  .brand-text span{ font-size:12px; color:var(--text-soft); }
+
+  .wrap{ max-width:1240px; margin:0 auto; padding:28px 28px 60px; }
+
+  .page-title h1{
+    font-size:26px; font-weight:800; margin:0 0 8px; letter-spacing:-0.2px;
+  }
+  .page-title p{ margin:0 0 24px; color:var(--text-soft); font-size:14px; max-width:640px; line-height:1.5; }
+
+  .panel{
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:20px 22px;
+  }
+  .filter-panel{ margin-bottom:20px; }
+
+  .group-label{
+    display:block; font-size:11px; font-weight:700; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--text-soft); margin-bottom:10px;
+  }
+  .filter-group{ margin-bottom:16px; }
+  .filter-group:last-of-type{ margin-bottom:0; }
+  .pillrow{ display:flex; gap:8px; flex-wrap:wrap; }
+  .filter-other-input{
+    width:100%; max-width:280px; margin-top:10px; padding:8px 11px; border:1px solid var(--border-strong);
+    border-radius:7px; font-family:var(--font); font-size:13px; background:var(--panel-alt); color:var(--text);
+  }
+  .filter-other-input:focus{ outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(224,167,58,0.28); }
+
+  .pill{
+    background:transparent; border:1px solid var(--border-strong); color:var(--text-soft);
+    border-radius:20px; padding:7px 14px; font-family:var(--font); font-size:13px;
+    font-weight:500; cursor:pointer; transition:all .12s ease;
+  }
+  .pill:hover{ border-color:var(--text-soft); color:var(--text); }
+  .pill.active{
+    border-color:var(--gold); color:var(--gold); background:var(--gold-soft); font-weight:600;
+  }
+
+  .panel-footer{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:18px; padding-top:16px; border-top:1px solid var(--border);
+  }
+  .btn-primary{
+    background:var(--gold); color:var(--gold-ink); border:none; border-radius:8px;
+    padding:11px 18px; font-family:var(--font); font-weight:700; font-size:13.5px;
+    cursor:pointer;
+  }
+  .btn-primary:hover{ filter:brightness(1.05); }
+  .updated{ font-size:12.5px; color:var(--text-faint); }
+
+  .stats-row{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:20px;
+  }
+  @media (max-width: 800px){ .stats-row{ grid-template-columns:repeat(2,1fr); } }
+  .stat-card{
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:16px 18px;
+  }
+  .stat-card .label{
+    font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--text-soft); margin-bottom:8px; display:block;
+  }
+  .stat-card .value{ font-size:28px; font-weight:800; line-height:1; margin-bottom:6px; }
+  .stat-card .value.gold{ color:var(--gold); }
+  .stat-card .value.red{ color:var(--red); }
+  .stat-card .sub{ font-size:12px; color:var(--text-faint); }
+
+  .main-panel{ padding-bottom:22px; }
+  .panel-head{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;
+    padding-bottom:16px; border-bottom:1px solid var(--border);
+  }
+  .panel-head .group-label{ margin-bottom:0; }
+  .viewToggle{ display:flex; gap:8px; }
+  .pill-toggle{
+    background:transparent; border:1px solid var(--border-strong); color:var(--text-soft);
+    border-radius:20px; padding:6px 14px; font-family:var(--font); font-size:12.5px;
+    font-weight:600; cursor:pointer;
+  }
+  .pill-toggle.active{ border-color:var(--teal); color:var(--teal); background:var(--teal-soft); }
+
+  .board{
+    display:grid; grid-template-columns:repeat(4, minmax(230px, 1fr)); gap:16px;
+  }
+  @media (max-width: 900px){ .board{ grid-template-columns:1fr; } }
+
+  .column{ background:var(--panel-alt); border:1px solid var(--border); border-radius:10px; padding:14px 12px 16px; min-height:120px; }
+  .column.dragover{ outline:2px dashed var(--gold); outline-offset:2px; }
+  .col-head{ display:flex; align-items:center; gap:8px; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+  .dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .col-head span.name{ font-weight:600; font-size:13.5px; }
+  .col-head span.count{ margin-left:auto; color:var(--text-faint); font-size:12px; }
+
+  .cardlist{ display:flex; flex-direction:column; gap:10px; min-height:40px; }
+
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:9px;
+    padding:12px 13px; cursor:grab; transition:border-color .12s ease;
+  }
+  .card:hover{ border-color:var(--border-strong); }
+  .card:active{ cursor:grabbing; }
+  .card.dragging{ opacity:0.4; }
+  .card h3{ font-size:14px; font-weight:600; margin:0 0 9px; line-height:1.3; }
+  .meta-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+  .format-chip{
+    font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px;
+    display:inline-flex; align-items:center; gap:5px;
+  }
+  .due{ font-size:11.5px; color:var(--text-faint); }
+  .due.overdue{ color:var(--red); font-weight:600; }
+  .card-bottom{ display:flex; align-items:center; justify-content:space-between; }
+  .avatar{
+    width:23px; height:23px; border-radius:50%; background:var(--panel-alt); border:1px solid var(--border-strong);
+    color:var(--text); font-size:10px; font-weight:700; display:flex;
+    align-items:center; justify-content:center; letter-spacing:0.3px;
+  }
+  .prio{ width:8px; height:8px; border-radius:50%; }
+  .empty-hint{ color:var(--text-faint); font-size:12.5px; text-align:center; padding:18px 6px; border:1px dashed var(--border); border-radius:8px; }
+
+  /* Gantt / timeline view */
+  .gantt{ overflow-x:auto; }
+  .gantt-inner{ position:relative; }
+  .gantt-axis{ position:sticky; top:0; z-index:4; background:var(--panel-alt); }
+  .axis-months{ display:flex; padding-left:200px; height:24px; }
+  .axis-months .month-block{
+    flex:none; font-size:10.5px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase;
+    color:var(--text-soft); border-left:1px solid var(--border); padding:4px 0 0 6px; box-sizing:border-box;
+    white-space:nowrap; overflow:hidden;
+  }
+  .axis-days{ display:flex; padding-left:200px; height:26px; border-bottom:1px solid var(--border-strong); margin-bottom:6px; }
+  .axis-days .unit{
+    flex:none; font-size:11px; color:var(--text-faint); border-left:1px solid var(--border);
+    padding:4px 0 0 6px; box-sizing:border-box; white-space:nowrap; text-align:left;
+  }
+  .axis-days .unit.weekend{ color:var(--text-soft); }
+  .axis-days .unit.is-today{ color:var(--red); font-weight:700; }
+  .gantt-row{ display:flex; align-items:center; height:46px; border-bottom:1px solid var(--border); }
+  .gantt-label{ flex:none; width:200px; padding-right:12px; font-size:12.5px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:6px; }
+  .gantt-label .dot{ width:7px; height:7px; border-radius:50%; flex:none; }
+  .gantt-track{ position:relative; flex:1 1 auto; height:100%; }
+  .gantt-track .gridline{ position:absolute; top:0; bottom:0; width:1px; background:var(--border); }
+  .gantt-track .today-line{ position:absolute; top:0; bottom:0; width:2px; background:var(--red); z-index:3; }
+  .gantt-bar{
+    position:absolute; top:10px; height:26px; border-radius:5px;
+    background:var(--panel-alt); display:flex; align-items:center; padding:0 8px;
+    font-size:11.5px; color:var(--text); font-weight:600; white-space:nowrap;
+    overflow:hidden; cursor:pointer; border-left:4px solid var(--gold); border:1px solid var(--border-strong);
+  }
+  .gantt-empty{ padding:30px; text-align:center; color:var(--text-faint); font-size:13px; }
+
+  /* Modal */
+  .overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.65); display:none; align-items:center; justify-content:center; z-index:50; padding:20px; }
+  .overlay.show{ display:flex; }
+  .modal{ background:var(--panel); border:1px solid var(--border-strong); color:var(--text); width:100%; max-width:440px; border-radius:12px; padding:22px 22px 20px; max-height:88vh; overflow-y:auto; }
+  .modal h2{ font-size:18px; font-weight:700; margin:0 0 16px; }
+  .field{ margin-bottom:13px; }
+  .field label{ display:block; font-size:11px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-soft); margin-bottom:6px; }
+  .field input, .field select, .field textarea{
+    width:100%; padding:9px 10px; border:1px solid var(--border-strong); border-radius:7px;
+    font-family:var(--font); font-size:14px; background:var(--panel-alt); color:var(--text);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(224,167,58,0.28); }
+  .field textarea{ resize:vertical; min-height:60px; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .modal-actions{ display:flex; justify-content:space-between; align-items:center; margin-top:16px; }
+  .btn-secondary{ background:var(--gold); color:var(--gold-ink); border:none; border-radius:7px; padding:9px 16px; font-weight:700; font-size:13.5px; cursor:pointer; }
+  .btn-ghost{ background:none; border:1px solid var(--border-strong); color:var(--text-soft); border-radius:7px; font-size:13px; cursor:pointer; padding:8px 14px; }
+  .btn-delete{ color:var(--red); background:none; border:none; font-size:13px; cursor:pointer; }
+  .note-shared{ font-size:12px; color:var(--text-faint); margin:-8px 0 18px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand-mark">SF</div>
+  <div class="brand-text">
+    <strong>Short Form Learning</strong>
+    <span>Build Tracker</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="page-title">
+    <h1>Build pipeline overview</h1>
+    <p>Every lesson, video, and guide in progress — stage, owner, and timing at a glance. This board is shared, so everyone on the team sees the same builds.</p>
+  </div>
+
+  <div class="panel filter-panel">
+    <div class="filter-group">
+      <span class="group-label">Format</span>
+      <div class="pillrow" id="formatPills"></div>
+      <input type="text" id="formatOtherFilterInput" class="filter-other-input" placeholder="Filter by custom format…" style="display:none;">
+    </div>
+    <div class="filter-group">
+      <span class="group-label">Owner</span>
+      <div class="pillrow" id="ownerPills"></div>
+      <input type="text" id="ownerOtherFilterInput" class="filter-other-input" placeholder="Filter by name…" style="display:none;">
+    </div>
+    <div class="panel-footer">
+      <a class="btn-primary" id="openAdd" href="new-project.html">+ New project</a>
+      <span class="updated" id="updatedAt"></span>
+    </div>
+  </div>
+
+  <div class="stats-row" id="stats"></div>
+
+  <div class="panel main-panel">
+    <div class="panel-head">
+      <span class="group-label" id="mainPanelLabel">Build pipeline</span>
+      <div class="viewToggle">
+        <button class="pill-toggle active" id="viewBoardBtn" data-view="board">Board</button>
+        <button class="pill-toggle" id="viewGanttBtn" data-view="gantt">Timeline</button>
+      </div>
+    </div>
+    <div class="board" id="board"></div>
+    <div class="gantt" id="gantt" style="display:none;"></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">Edit build</h2>
+    <div class="field">
+      <label for="fTitle">Title</label>
+      <input id="fTitle" type="text" placeholder="e.g. Geology for Non-Geologists">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="fFormat">Format</label>
+        <select id="fFormat">
+          <option value="canvas">Canvas build</option>
+          <option value="video">Video project</option>
+          <option value="interactive">Interactive build</option>
+          <option value="written">Written guide</option>
+          <option value="other">Other</option>
+          <option value="audio">Audio lesson</option>
+        </select>
+        <input id="fFormatOther" type="text" placeholder="Describe the format" style="display:none; margin-top:8px;">
+      </div>
+      <div class="field">
+        <label for="fStage">Stage</label>
+        <select id="fStage">
+          <option value="idea">Idea</option>
+          <option value="production">In production</option>
+          <option value="review">In review</option>
+          <option value="published">Published</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="fOwner">Owner</label>
+        <select id="fOwner">
+          <option value="">Select owner…</option>
+          <option value="Oliver">Oliver</option>
+          <option value="Miah">Miah</option>
+          <option value="Eleanor">Eleanor</option>
+          <option value="Glenn">Glenn</option>
+          <option value="Gorgia">Gorgia</option>
+          <option value="other">Other</option>
+        </select>
+        <input id="fOwnerOther" type="text" placeholder="Enter owner name" style="display:none; margin-top:8px;">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="fStart">Start date</label>
+        <input id="fStart" type="date">
+      </div>
+      <div class="field">
+        <label for="fDue">Due date</label>
+        <input id="fDue" type="date">
+      </div>
+    </div>
+    <div class="field">
+      <label for="fPriority">Priority</label>
+      <select id="fPriority">
+        <option value="high">High</option>
+        <option value="medium" selected>Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="fNotes">Notes</label>
+      <textarea id="fNotes" placeholder="Script link, blockers, anything the team should know"></textarea>
+    </div>
+    <div class="modal-actions">
+      <div>
+        <button class="btn-delete" id="deleteBtn" style="display:none;">Delete build</button>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <a class="btn-ghost" id="fullDetailsLink" href="new-project.html">Full details →</a>
+        <button class="btn-ghost" id="cancelBtn">Cancel</button>
+        <button class="btn-secondary" id="saveBtn">Save build</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="data-client.js"></script>
+<script>
+const STAGES = [
+  {id:'idea', label:'Idea', color:'var(--gold)'},
+  {id:'production', label:'In production', color:'var(--teal)'},
+  {id:'review', label:'In review', color:'var(--lavender)'},
+  {id:'published', label:'Published', color:'#7FA6A0'}
+];
+const FORMATS = {
+  canvas:{ label:'Canvas build', color:'#5B8DEF' },
+  video:{ label:'Video project', color:'#E0A73A' },
+  interactive:{ label:'Interactive build', color:'#6FA8DC' },
+  written:{ label:'Written guide', color:'#4FBFA8' },
+  other:{ label:'Other', color:'#9A9A9A' },
+  audio:{ label:'Audio lesson', color:'#9C8FC9' }
+};
+const PRIORITY_COLOR = { high:'#E2735A', medium:'#E0A73A', low:'#4FBFA8' };
+
+let builds = [];
+let editingId = null;
+let draggingId = null;
+let currentView = 'board';
+let filterFormat = '';
+let filterOwner = '';
+let filterFormatText = '';
+let filterOwnerText = '';
+const NAMED_OWNERS = ['Oliver','Miah','Eleanor','Glenn','Gorgia'];
+function matchesOwnerFilter(owner){
+  if(!filterOwner) return true;
+  if(filterOwner === '__other__'){
+    if(!owner || NAMED_OWNERS.includes(owner)) return false;
+    if(filterOwnerText) return owner.toLowerCase().includes(filterOwnerText.toLowerCase());
+    return true;
+  }
+  return owner === filterOwner;
+}
+function matchesFormatFilter(b){
+  if(!filterFormat) return true;
+  if(filterFormat === 'other'){
+    if(b.format !== 'other') return false;
+    if(filterFormatText) return (b.formatOther || '').toLowerCase().includes(filterFormatText.toLowerCase());
+    return true;
+  }
+  return b.format === filterFormat;
+}
+
+function uid(){ return 'b_' + Math.random().toString(36).slice(2,10); }
+function initials(name){
+  if(!name) return '?';
+  return name.trim().split(/\s+/).slice(0,2).map(w=>w[0].toUpperCase()).join('');
+}
+function fmtDate(d){
+  if(!d) return 'No due date';
+  const dt = new Date(d+'T00:00:00');
+  return dt.toLocaleDateString(undefined,{month:'short', day:'numeric'});
+}
+function isOverdue(d, stage){
+  if(!d || stage==='published') return false;
+  return new Date(d+'T00:00:00') < new Date(new Date().toDateString());
+}
+
+async function loadBuilds(){
+  try{
+    builds = await window.BuildsAPI.fetchAll();
+    if(builds.length === 0){
+      for(const b of seedData()){ await window.BuildsAPI.insert(b); }
+      builds = await window.BuildsAPI.fetchAll();
+    }
+    markSynced();
+  }catch(e){
+    console.error('Could not load builds:', e);
+    document.getElementById('updatedAt').textContent = 'Could not connect — check firebase-config.js';
+  }
+  render();
+}
+
+function markSynced(){
+  document.getElementById('updatedAt').textContent = 'Synced ' + new Date().toLocaleTimeString(undefined,{hour:'numeric', minute:'2-digit'});
+}
+
+function seedData(){
+  const today = new Date();
+  const inDays = n => { const d=new Date(today); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
+  return [
+    { id:uid(), title:'Intro to Compound Interest', format:'video', stage:'production', owner:'Oliver', start:inDays(-2), due:inDays(4), priority:'high', notes:'Script locked, filming Thursday.' },
+    { id:uid(), title:'Reading a Payslip', format:'written', stage:'idea', owner:'Miah', start:inDays(1), due:inDays(10), priority:'medium', notes:'' },
+    { id:uid(), title:'Budgeting 101 Quiz', format:'interactive', stage:'review', owner:'Eleanor', start:inDays(-6), due:inDays(2), priority:'high', notes:'Waiting on final answer-key check.' },
+    { id:uid(), title:'What Is a Credit Score', format:'audio', stage:'published', owner:'Glenn', start:inDays(-10), due:inDays(-3), priority:'low', notes:'Live on the app.' }
+  ];
+}
+
+function populateFilterPills(){
+  const fmtWrap = document.getElementById('formatPills');
+  const ownerWrap = document.getElementById('ownerPills');
+
+  const fmtButtons = [['','All formats']].concat(Object.entries(FORMATS).map(([k,v])=>[k,v.label]));
+  fmtWrap.innerHTML = fmtButtons.map(([val,label]) =>
+    `<button class="pill ${filterFormat===val?'active':''}" data-filter="format" data-value="${val}">${label}</button>`
+  ).join('');
+
+  const hasOtherOwner = builds.some(b => b.owner && !NAMED_OWNERS.includes(b.owner));
+  const ownerButtons = [['','All owners']].concat(NAMED_OWNERS.map(o=>[o,o]));
+  if(hasOtherOwner || filterOwner === '__other__') ownerButtons.push(['__other__','Other']);
+  ownerWrap.innerHTML = ownerButtons.map(([val,label]) =>
+    `<button class="pill ${filterOwner===val?'active':''}" data-filter="owner" data-value="${val}">${label}</button>`
+  ).join('');
+
+  fmtWrap.querySelectorAll('.pill').forEach(btn => {
+    btn.addEventListener('click', () => { filterFormat = btn.dataset.value; render(); });
+  });
+  ownerWrap.querySelectorAll('.pill').forEach(btn => {
+    btn.addEventListener('click', () => { filterOwner = btn.dataset.value; render(); });
+  });
+
+  document.getElementById('formatOtherFilterInput').style.display = filterFormat === 'other' ? 'block' : 'none';
+  document.getElementById('ownerOtherFilterInput').style.display = filterOwner === '__other__' ? 'block' : 'none';
+}
+
+function renderStats(){
+  const total = builds.length;
+  const inReview = builds.filter(b=>b.stage==='review').length;
+  const published = builds.filter(b=>b.stage==='published').length;
+  const overdue = builds.filter(b=>isOverdue(b.due, b.stage)).length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card">
+      <span class="label">Total builds</span>
+      <div class="value gold">${total}</div>
+      <span class="sub">across all stages</span>
+    </div>
+    <div class="stat-card">
+      <span class="label">In review</span>
+      <div class="value">${inReview}</div>
+      <span class="sub">awaiting sign-off</span>
+    </div>
+    <div class="stat-card">
+      <span class="label">Published</span>
+      <div class="value">${published}</div>
+      <span class="sub">live builds</span>
+    </div>
+    <div class="stat-card">
+      <span class="label">Overdue</span>
+      <div class="value ${overdue>0?'red':''}">${overdue}</div>
+      <span class="sub">past due date</span>
+    </div>
+  `;
+}
+
+function render(){
+  populateFilterPills();
+  renderStats();
+  const label = currentView === 'gantt' ? 'Build timeline' : 'Build pipeline';
+  document.getElementById('mainPanelLabel').textContent = label;
+  if(currentView === 'gantt'){
+    document.getElementById('board').style.display = 'none';
+    document.getElementById('gantt').style.display = 'block';
+    renderGantt();
+  } else {
+    document.getElementById('board').style.display = 'grid';
+    document.getElementById('gantt').style.display = 'none';
+    renderBoard();
+  }
+}
+
+function renderBoard(){
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+
+  STAGES.forEach(stage => {
+    const col = document.createElement('div');
+    col.className = 'column';
+    col.dataset.stage = stage.id;
+
+    const items = builds.filter(b => b.stage === stage.id)
+      .filter(b => matchesFormatFilter(b))
+      .filter(b => matchesOwnerFilter(b.owner));
+
+    col.innerHTML = `
+      <div class="col-head">
+        <span class="dot" style="background:${stage.color}"></span>
+        <span class="name">${stage.label}</span>
+        <span class="count">${items.length}</span>
+      </div>
+      <div class="cardlist" data-stage="${stage.id}"></div>
+    `;
+
+    const list = col.querySelector('.cardlist');
+    if(items.length === 0){
+      list.innerHTML = `<div class="empty-hint">Nothing here yet</div>`;
+    } else {
+      items.forEach(b => list.appendChild(renderCard(b)));
+    }
+
+    col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('dragover'); });
+    col.addEventListener('dragleave', () => col.classList.remove('dragover'));
+    col.addEventListener('drop', async e => {
+      e.preventDefault();
+      col.classList.remove('dragover');
+      if(draggingId){
+        const b = builds.find(x=>x.id===draggingId);
+        if(b){
+          const prevStage = b.stage;
+          b.stage = stage.id;
+          render();
+          try{
+            await window.BuildsAPI.update(b.id, { stage: stage.id });
+            markSynced();
+          }catch(err){
+            console.error('Could not save stage change:', err);
+            b.stage = prevStage;
+            render();
+          }
+        }
+      }
+    });
+
+    board.appendChild(col);
+  });
+}
+
+function renderCard(b){
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.draggable = true;
+  const fmt = FORMATS[b.format] || FORMATS.other;
+  const fmtLabel = (b.format === 'other' && b.formatOther) ? b.formatOther : fmt.label;
+  const overdue = isOverdue(b.due, b.stage);
+  card.innerHTML = `
+    <h3>${escapeHtml(b.title)}</h3>
+    <div class="meta-row">
+      <span class="format-chip" style="background:${fmt.color}22; border:1px solid ${fmt.color}66; color:${fmt.color};">${escapeHtml(fmtLabel)}</span>
+      <span class="due ${overdue?'overdue':''}">${overdue ? 'Overdue · ' : ''}${fmtDate(b.due)}</span>
+    </div>
+    <div class="card-bottom">
+      <span class="avatar" title="${escapeHtml(b.owner||'Unassigned')}">${initials(b.owner)}</span>
+      <span class="prio" title="${b.priority} priority" style="background:${PRIORITY_COLOR[b.priority]}"></span>
+    </div>
+  `;
+  card.addEventListener('dragstart', () => { draggingId = b.id; card.classList.add('dragging'); });
+  card.addEventListener('dragend', () => { draggingId = null; card.classList.remove('dragging'); });
+  card.addEventListener('click', () => openEdit(b.id));
+  return card;
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function dayMs(){ return 24*60*60*1000; }
+function toDate(str){ return new Date(str + 'T00:00:00'); }
+function addDays(date, n){ const d = new Date(date); d.setDate(d.getDate()+n); return d; }
+function daysBetween(a,b){ return Math.round((b-a)/dayMs()); }
+
+function renderGantt(){
+  const gantt = document.getElementById('gantt');
+
+  const items = builds
+    .filter(b => matchesFormatFilter(b))
+    .filter(b => matchesOwnerFilter(b.owner))
+    .filter(b => b.due)
+    .slice()
+    .sort((a,b) => (a.start||a.due).localeCompare(b.start||b.due));
+
+  if(items.length === 0){
+    gantt.innerHTML = `<div class="gantt-empty">No builds with dates to show. Add a start or due date to see them on the timeline.</div>`;
+    return;
+  }
+
+  const starts = items.map(b => toDate(b.start || b.due));
+  const dues = items.map(b => toDate(b.due));
+  let rangeStart = new Date(Math.min(...starts, ...dues));
+  let rangeEnd = new Date(Math.max(...starts, ...dues));
+  rangeStart = addDays(rangeStart, -2);
+  rangeEnd = addDays(rangeEnd, 3);
+  const totalDays = Math.max(daysBetween(rangeStart, rangeEnd), 7);
+  const dayWidth = 34;
+  const trackWidth = totalDays * dayWidth;
+  const todayStr = new Date().toDateString();
+
+  // Day-number row + weekend/today highlighting
+  let daysHtml = '';
+  for(let i=0;i<totalDays;i++){
+    const d = addDays(rangeStart, i);
+    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+    const isToday = d.toDateString() === todayStr;
+    const cls = ['unit', isWeekend ? 'weekend' : '', isToday ? 'is-today' : ''].filter(Boolean).join(' ');
+    daysHtml += `<div class="${cls}" style="width:${dayWidth}px;">${d.getDate()}</div>`;
+  }
+
+  // Month-band row: group consecutive days that share a month/year
+  let monthsHtml = '';
+  let i = 0;
+  while(i < totalDays){
+    const d = addDays(rangeStart, i);
+    const monthKey = d.getMonth() + '-' + d.getFullYear();
+    let span = 0;
+    while(i + span < totalDays){
+      const dd = addDays(rangeStart, i + span);
+      if((dd.getMonth() + '-' + dd.getFullYear()) !== monthKey) break;
+      span++;
+    }
+    const label = d.toLocaleDateString(undefined, {month:'long', year:'numeric'});
+    monthsHtml += `<div class="month-block" style="width:${span*dayWidth}px;">${label}</div>`;
+    i += span;
+  }
+
+  const todayOffset = daysBetween(rangeStart, new Date(new Date().toDateString())) * dayWidth;
+
+  let rowsHtml = '';
+  items.forEach(b => {
+    const fmt = FORMATS[b.format];
+    const s = toDate(b.start || b.due);
+    const e = toDate(b.due);
+    const offset = Math.max(daysBetween(rangeStart, s), 0) * dayWidth;
+    const span = Math.max(daysBetween(s, e), 1) * dayWidth;
+    const stage = STAGES.find(st => st.id === b.stage);
+
+    let gridlines = '';
+    for(let i=0;i<=totalDays;i++){
+      gridlines += `<div class="gridline" style="left:${i*dayWidth}px;"></div>`;
+    }
+
+    rowsHtml += `
+      <div class="gantt-row">
+        <div class="gantt-label" title="${escapeHtml(b.title)}">
+          <span class="dot" style="background:${stage.color}"></span>
+          ${escapeHtml(b.title)}
+        </div>
+        <div class="gantt-track" style="width:${trackWidth}px;">
+          ${gridlines}
+          <div class="today-line" style="left:${todayOffset}px;" title="Today"></div>
+          <div class="gantt-bar" data-id="${b.id}" style="left:${offset}px; width:${span}px; border-left-color:${fmt.color};">
+            ${escapeHtml(b.title)}
+          </div>
+        </div>
+      </div>`;
+  });
+
+  gantt.innerHTML = `
+    <div class="gantt-inner" style="width:${200 + trackWidth}px;">
+      <div class="gantt-axis">
+        <div class="axis-months">${monthsHtml}</div>
+        <div class="axis-days">${daysHtml}</div>
+      </div>
+      ${rowsHtml}
+    </div>`;
+
+  gantt.querySelectorAll('.gantt-bar').forEach(bar => {
+    bar.addEventListener('click', () => openEdit(bar.dataset.id));
+  });
+}
+
+// Modal handling
+const overlay = document.getElementById('overlay');
+function openEdit(id){
+  const b = builds.find(x=>x.id===id);
+  if(!b) return;
+  editingId = id;
+  document.getElementById('modalTitle').textContent = 'Edit build';
+  document.getElementById('fTitle').value = b.title;
+  document.getElementById('fFormat').value = b.format;
+  document.getElementById('fFormatOther').style.display = b.format === 'other' ? 'block' : 'none';
+  document.getElementById('fFormatOther').value = b.formatOther || '';
+  document.getElementById('fStage').value = b.stage;
+  if(b.owner && NAMED_OWNERS.includes(b.owner)){
+    document.getElementById('fOwner').value = b.owner;
+    document.getElementById('fOwnerOther').style.display = 'none';
+  } else if(b.owner){
+    document.getElementById('fOwner').value = 'other';
+    document.getElementById('fOwnerOther').style.display = 'block';
+    document.getElementById('fOwnerOther').value = b.owner;
+  } else {
+    document.getElementById('fOwner').value = '';
+    document.getElementById('fOwnerOther').style.display = 'none';
+  }
+  document.getElementById('fStart').value = b.start || '';
+  document.getElementById('fDue').value = b.due || '';
+  document.getElementById('fPriority').value = b.priority;
+  document.getElementById('fNotes').value = b.notes || '';
+  document.getElementById('deleteBtn').style.display = 'inline-block';
+  document.getElementById('fullDetailsLink').href = 'new-project.html?id=' + id;
+  overlay.classList.add('show');
+}
+function closeModal(){ overlay.classList.remove('show'); editingId = null; }
+
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
+document.getElementById('fFormat').addEventListener('change', (e) => {
+  document.getElementById('fFormatOther').style.display = e.target.value === 'other' ? 'block' : 'none';
+});
+document.getElementById('fOwner').addEventListener('change', (e) => {
+  document.getElementById('fOwnerOther').style.display = e.target.value === 'other' ? 'block' : 'none';
+});
+
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const title = document.getElementById('fTitle').value.trim();
+  if(!title){ document.getElementById('fTitle').focus(); return; }
+  const ownerSel = document.getElementById('fOwner').value;
+  const owner = ownerSel === 'other' ? document.getElementById('fOwnerOther').value.trim() : ownerSel;
+  const data = {
+    title,
+    format: document.getElementById('fFormat').value,
+    formatOther: document.getElementById('fFormatOther').value.trim(),
+    stage: document.getElementById('fStage').value,
+    owner,
+    start: document.getElementById('fStart').value,
+    due: document.getElementById('fDue').value,
+    priority: document.getElementById('fPriority').value,
+    notes: document.getElementById('fNotes').value.trim()
+  };
+  try{
+    if(editingId){
+      const b = builds.find(x=>x.id===editingId);
+      Object.assign(b, data);
+      await window.BuildsAPI.update(editingId, data);
+    } else {
+      const newBuild = { id: uid(), ...data };
+      builds.push(newBuild);
+      await window.BuildsAPI.insert(newBuild);
+    }
+    markSynced();
+    closeModal();
+    render();
+  }catch(err){
+    console.error('Could not save build:', err);
+    document.getElementById('updatedAt').textContent = 'Could not save — try again';
+  }
+});
+
+document.getElementById('deleteBtn').addEventListener('click', async () => {
+  if(!editingId) return;
+  try{
+    await window.BuildsAPI.remove(editingId);
+    builds = builds.filter(x => x.id !== editingId);
+    markSynced();
+    closeModal();
+    render();
+  }catch(err){
+    console.error('Could not delete build:', err);
+    document.getElementById('updatedAt').textContent = 'Could not delete — try again';
+  }
+});
+
+document.getElementById('viewBoardBtn').addEventListener('click', () => {
+  currentView = 'board';
+  document.getElementById('viewBoardBtn').classList.add('active');
+  document.getElementById('viewGanttBtn').classList.remove('active');
+  render();
+});
+document.getElementById('viewGanttBtn').addEventListener('click', () => {
+  currentView = 'gantt';
+  document.getElementById('viewGanttBtn').classList.add('active');
+  document.getElementById('viewBoardBtn').classList.remove('active');
+  render();
+});
+
+document.getElementById('formatOtherFilterInput').addEventListener('input', (e) => {
+  filterFormatText = e.target.value;
+  renderStats();
+  if(currentView === 'gantt') renderGantt(); else renderBoard();
+});
+document.getElementById('ownerOtherFilterInput').addEventListener('input', (e) => {
+  filterOwnerText = e.target.value;
+  renderStats();
+  if(currentView === 'gantt') renderGantt(); else renderBoard();
+});
+
+loadBuilds();
+if(window.BuildsAPI){
+  window.BuildsAPI.subscribeToChanges(() => { loadBuilds(); });
+}
+</script>
+</body>
+</html>
