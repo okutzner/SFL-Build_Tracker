@@ -259,9 +259,16 @@
   <div class="panel main-panel">
     <div class="panel-head">
       <span class="group-label" id="mainPanelLabel">Build pipeline</span>
-      <div class="viewToggle">
-        <button class="pill-toggle active" id="viewBoardBtn" data-view="board">Board</button>
-        <button class="pill-toggle" id="viewGanttBtn" data-view="gantt">Timeline</button>
+      <div style="display:flex; gap:14px; align-items:center;">
+        <div class="viewToggle" id="ganttZoomControls" style="display:none;">
+          <button class="pill-toggle" id="zoomOutBtn" title="Zoom out">−</button>
+          <button class="pill-toggle" id="zoomFitBtn" title="Reset zoom">Reset</button>
+          <button class="pill-toggle" id="zoomInBtn" title="Zoom in">+</button>
+        </div>
+        <div class="viewToggle">
+          <button class="pill-toggle active" id="viewBoardBtn" data-view="board">Board</button>
+          <button class="pill-toggle" id="viewGanttBtn" data-view="gantt">Timeline</button>
+        </div>
       </div>
     </div>
     <div class="board" id="board"></div>
@@ -283,7 +290,7 @@
           <option value="canvas">Canvas build</option>
           <option value="video">Video project</option>
           <option value="interactive">Interactive build</option>
-          <option value="written">Written guide</option>
+          <option value="written">Comms build</option>
           <option value="other">Other</option>
           <option value="audio">Audio lesson</option>
         </select>
@@ -364,7 +371,7 @@ const FORMATS = {
   canvas:{ label:'Canvas build', color:'#5B8DEF' },
   video:{ label:'Video project', color:'#E0A73A' },
   interactive:{ label:'Interactive build', color:'#6FA8DC' },
-  written:{ label:'Written guide', color:'#4FBFA8' },
+  written:{ label:'Comms build', color:'#4FBFA8' },
   other:{ label:'Other', color:'#9A9A9A' },
   audio:{ label:'Audio lesson', color:'#9C8FC9' }
 };
@@ -374,6 +381,10 @@ let builds = [];
 let editingId = null;
 let draggingId = null;
 let currentView = 'board';
+let ganttDayWidth = 34;
+const GANTT_DAY_WIDTH_MIN = 14;
+const GANTT_DAY_WIDTH_MAX = 70;
+const GANTT_DAY_WIDTH_DEFAULT = 34;
 let filterFormat = '';
 let filterOwner = '';
 let filterFormatText = '';
@@ -507,10 +518,12 @@ function render(){
   if(currentView === 'gantt'){
     document.getElementById('board').style.display = 'none';
     document.getElementById('gantt').style.display = 'block';
+    document.getElementById('ganttZoomControls').style.display = 'flex';
     renderGantt();
   } else {
     document.getElementById('board').style.display = 'grid';
     document.getElementById('gantt').style.display = 'none';
+    document.getElementById('ganttZoomControls').style.display = 'none';
     renderBoard();
   }
 }
@@ -621,12 +634,13 @@ function renderGantt(){
 
   const starts = items.map(b => toDate(b.start || b.due));
   const dues = items.map(b => toDate(b.due));
-  let rangeStart = new Date(Math.min(...starts, ...dues));
-  let rangeEnd = new Date(Math.max(...starts, ...dues));
+  const today = new Date(new Date().toDateString());
+  let rangeStart = new Date(Math.min(...starts, ...dues, +addDays(today, -7)));
+  let rangeEnd = new Date(Math.max(...starts, ...dues, +addDays(today, 60)));
   rangeStart = addDays(rangeStart, -2);
   rangeEnd = addDays(rangeEnd, 3);
   const totalDays = Math.max(daysBetween(rangeStart, rangeEnd), 7);
-  const dayWidth = 34;
+  const dayWidth = ganttDayWidth;
   const trackWidth = totalDays * dayWidth;
   const todayStr = new Date().toDateString();
 
@@ -805,6 +819,19 @@ document.getElementById('viewGanttBtn').addEventListener('click', () => {
   document.getElementById('viewGanttBtn').classList.add('active');
   document.getElementById('viewBoardBtn').classList.remove('active');
   render();
+});
+
+document.getElementById('zoomInBtn').addEventListener('click', () => {
+  ganttDayWidth = Math.min(GANTT_DAY_WIDTH_MAX, ganttDayWidth + 8);
+  renderGantt();
+});
+document.getElementById('zoomOutBtn').addEventListener('click', () => {
+  ganttDayWidth = Math.max(GANTT_DAY_WIDTH_MIN, ganttDayWidth - 8);
+  renderGantt();
+});
+document.getElementById('zoomFitBtn').addEventListener('click', () => {
+  ganttDayWidth = GANTT_DAY_WIDTH_DEFAULT;
+  renderGantt();
 });
 
 document.getElementById('formatOtherFilterInput').addEventListener('input', (e) => {
