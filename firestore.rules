@@ -1,0 +1,20 @@
+// Paste this into: Firebase Console -> Firestore Database -> Rules tab -> Publish.
+//
+// This opens the `builds` collection up for anyone with your Firebase
+// config (which is public in the page source, by design -- see the note
+// in firebase-config.js) to read and write. There's no login system in
+// this tracker, so this is the rule set that makes it work as an open
+// team board.
+//
+// Do not use this rule set for anything more sensitive than "internal
+// team board on an unlisted URL." If you outgrow that, add Firebase
+// Authentication and tighten these rules to check request.auth.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /builds/{buildId} {
+      allow read, write: if true;
+    }
+  }
+}

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Project — Short Form Learning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D0D0F;
+    --panel:#17171A;
+    --panel-alt:#1D1D21;
+    --border:rgba(255,255,255,0.09);
+    --border-strong:rgba(255,255,255,0.18);
+    --text:#F2F2F0;
+    --text-soft:#9A9A9A;
+    --text-faint:#6C6C6C;
+    --gold:#E0A73A;
+    --gold-soft:rgba(224,167,58,0.14);
+    --gold-ink:#1A1408;
+    --teal:#4FBFA8;
+    --teal-soft:rgba(79,191,168,0.14);
+    --red:#E2735A;
+    --font:'Inter', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font); min-height:100vh; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; text-decoration:none; }
+
+  .topbar{ display:flex; align-items:center; gap:14px; padding:16px 28px; border-bottom:1px solid var(--border); }
+  .brand-mark{ width:34px; height:34px; border-radius:8px; background:var(--gold); color:var(--gold-ink); font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; flex:none; }
+  .brand-text{ display:flex; flex-direction:column; line-height:1.2; }
+  .brand-text strong{ font-size:14.5px; font-weight:600; }
+  .brand-text span{ font-size:12px; color:var(--text-soft); }
+  .back-link{ margin-left:auto; font-size:13px; color:var(--text-soft); border:1px solid var(--border-strong); border-radius:20px; padding:7px 14px; }
+  .back-link:hover{ color:var(--text); border-color:var(--text-soft); }
+
+  .wrap{ max-width:760px; margin:0 auto; padding:28px 28px 80px; }
+  .page-title h1{ font-size:26px; font-weight:800; margin:0 0 8px; letter-spacing:-0.2px; }
+  .page-title p{ margin:0 0 26px; color:var(--text-soft); font-size:14px; line-height:1.5; }
+
+  .panel{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:20px 22px; margin-bottom:16px; }
+  .group-label{ display:block; font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-soft); margin-bottom:14px; }
+  .group-sub{ font-size:12.5px; color:var(--text-faint); margin:-8px 0 14px; }
+
+  .field{ margin-bottom:13px; }
+  .field:last-child{ margin-bottom:0; }
+  .field label{ display:block; font-size:11px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-soft); margin-bottom:6px; }
+  .field input, .field select, .field textarea{
+    width:100%; padding:10px 11px; border:1px solid var(--border-strong); border-radius:7px;
+    font-family:var(--font); font-size:14px; background:var(--panel-alt); color:var(--text);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-color:var(--gold); }
+  .field textarea{ resize:vertical; min-height:64px; }
+  .hint{ font-size:11.5px; color:var(--text-faint); margin-top:5px; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:13px; }
+  .row2:last-child{ margin-bottom:0; }
+
+  .pillrow{ display:flex; gap:8px; flex-wrap:wrap; }
+
+  .check-pill{
+    display:inline-flex; align-items:center; gap:9px; border:1px solid var(--border-strong);
+    border-radius:8px; padding:9px 14px; cursor:pointer; font-size:13.5px; color:var(--text-soft);
+    background:transparent; transition:all .12s ease; user-select:none;
+  }
+  .check-pill:hover{ border-color:var(--text-soft); }
+  .check-pill input{ display:none; }
+  .check-pill .box{
+    width:15px; height:15px; border-radius:4px; border:1.5px solid var(--border-strong);
+    display:flex; align-items:center; justify-content:center; flex:none; background:var(--panel-alt);
+  }
+  .check-pill.radio .box{ border-radius:50%; }
+  .check-pill .box svg{ display:none; width:10px; height:10px; }
+  .check-pill.active{ border-color:var(--gold); color:var(--gold); background:var(--gold-soft); font-weight:600; }
+  .check-pill.active .box{ background:var(--gold); border-color:var(--gold); }
+  .check-pill.active .box svg{ display:block; }
+
+  .other-input{ margin-top:10px; max-width:320px; }
+
+  .dyn-list{ display:flex; flex-direction:column; gap:10px; margin-bottom:12px; }
+  .dyn-row{ display:flex; gap:8px; align-items:flex-start; }
+  .dyn-row .field{ flex:1; margin-bottom:0; }
+  .dyn-row .field-check{ display:flex; align-items:center; gap:6px; padding-top:26px; flex:none; }
+  .remove-row{
+    background:none; border:1px solid var(--border-strong); color:var(--text-faint);
+    border-radius:6px; width:34px; height:36px; margin-top:20px; cursor:pointer; font-size:15px; flex:none;
+  }
+  .remove-row:hover{ color:var(--red); border-color:var(--red); }
+  .add-row-btn{
+    background:none; border:1px dashed var(--border-strong); color:var(--text-soft);
+    border-radius:7px; padding:9px 14px; font-size:13px; cursor:pointer; align-self:flex-start;
+  }
+  .add-row-btn:hover{ border-color:var(--gold); color:var(--gold); }
+
+  .form-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:8px; }
+  .btn-primary{ background:var(--gold); color:var(--gold-ink); border:none; border-radius:8px; padding:12px 20px; font-family:var(--font); font-weight:700; font-size:14px; cursor:pointer; }
+  .btn-primary:hover{ filter:brightness(1.05); }
+  .btn-ghost{ background:none; border:1px solid var(--border-strong); color:var(--text-soft); border-radius:8px; padding:11px 18px; font-size:14px; cursor:pointer; display:inline-flex; align-items:center; }
+  .btn-ghost:hover{ color:var(--text); border-color:var(--text-soft); }
+
+  .required-mark{ color:var(--red); }
+  #formStatus{ font-size:12.5px; color:var(--text-faint); margin-top:10px; text-align:right; min-height:16px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand-mark">SF</div>
+  <div class="brand-text">
+    <strong>Short Form Learning</strong>
+    <span>Build Tracker</span>
+  </div>
+  <a class="back-link" href="short-form-learning-tracker.html">← Back to tracker</a>
+</div>
+
+<div class="wrap">
+  <div class="page-title">
+    <h1 id="pageHeading">New project</h1>
+    <p>Capture everything the team needs to plan and track this build. It'll appear on the board and timeline as soon as you save.</p>
+  </div>
+
+  <form id="projectForm">
+
+    <div class="panel">
+      <span class="group-label">Project basics</span>
+      <div class="field">
+        <label for="fTitle">Title <span class="required-mark">*</span></label>
+        <input id="fTitle" type="text" placeholder="e.g. Geology for Non-Geologists" required>
+      </div>
+      <div class="field">
+        <label for="fDescription">Description</label>
+        <textarea id="fDescription" placeholder="What is this project, and what does success look like?"></textarea>
+      </div>
+    </div>
+
+    <div class="panel">
+      <span class="group-label">Type of project</span>
+      <div class="pillrow" id="typePills">
+        <label class="check-pill"><input type="checkbox" value="Credential"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg></span>Credential</label>
+        <label class="check-pill"><input type="checkbox" value="Short Course"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg></span>Short Course</label>
+        <label class="check-pill"><input type="checkbox" value="Professional Development"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg></span>Professional Development</label>
+        <label class="check-pill" id="typeOtherPill"><input type="checkbox" id="typeOtherCheck" value="Other"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg></span>Other</label>
+      </div>
+      <input id="fTypeOther" class="other-input" type="text" placeholder="Describe the project type" style="display:none;">
+    </div>
+
+    <div class="panel">
+      <span class="group-label">Credit status</span>
+      <div class="pillrow" id="creditPills">
+        <label class="check-pill radio"><input type="radio" name="credit" value="credit"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg></span>For credit</label>
+        <label class="check-pill radio"><input type="radio" name="credit" value="noncredit"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg></span>Non-credit</label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <span class="group-label">Build approach</span>
+      <div class="pillrow" id="approachPills" style="margin-bottom:14px;">
+        <label class="check-pill radio"><input type="radio" name="approach" value="new"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg></span>New build</label>
+        <label class="check-pill radio"><input type="radio" name="approach" value="repurpose"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg></span>Repurpose build</label>
+      </div>
+      <div class="pillrow" id="videoPill">
+        <label class="check-pill"><input type="checkbox" id="fIsVideo"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg></span>Video project — includes video production</label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <span class="group-label">Format, stage & priority</span>
+      <div class="row2">
+        <div class="field">
+          <label for="fFormat">Primary format</label>
+          <select id="fFormat">
+            <option value="canvas">Canvas build</option>
+            <option value="video">Video project</option>
+            <option value="interactive">Interactive build</option>
+            <option value="written">Written guide</option>
+            <option value="other">Other</option>
+            <option value="audio">Audio lesson</option>
+          </select>
+          <input id="fFormatOther" type="text" placeholder="Describe the format" style="display:none; margin-top:8px;">
+        </div>
+        <div class="field">
+          <label for="fStage">Starting stage</label>
+          <select id="fStage">
+            <option value="idea">Idea</option>
+            <option value="production">In production</option>
+            <option value="review">In review</option>
+            <option value="published">Published</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="fPriority">Priority</label>
+        <select id="fPriority">
+          <option value="high">High</option>
+          <option value="medium" selected>Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="panel">
+      <span class="group-label">Project owner &amp; team</span>
+      <div class="field">
+        <label for="fOwner">Project owner <span class="required-mark">*</span></label>
+        <select id="fOwner" required>
+          <option value="">Select owner…</option>
+          <option value="Oliver">Oliver</option>
+          <option value="Miah">Miah</option>
+          <option value="Eleanor">Eleanor</option>
+          <option value="Glenn">Glenn</option>
+          <option value="Gorgia">Gorgia</option>
+          <option value="other">Other</option>
+        </select>
+        <input id="fOwnerOther" type="text" placeholder="Enter owner name" style="display:none; margin-top:8px;">
+      </div>
+      <p class="group-sub" style="margin-top:14px;">Project team</p>
+      <div class="dyn-list" id="teamList"></div>
+      <button type="button" class="add-row-btn" id="addTeamBtn">+ Add team member</button>
+    </div>
+
+    <div class="panel">
+      <span class="group-label">Client / academic contact</span>
+      <div class="pillrow" id="stakeholderPills" style="margin-bottom:14px;">
+        <label class="check-pill radio"><input type="radio" name="stakeholder" value="client"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg></span>Client</label>
+        <label class="check-pill radio"><input type="radio" name="stakeholder" value="academic"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg></span>Academic</label>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="fContactName">Contact name</label>
+          <input id="fContactName" type="text" placeholder="e.g. Dr. Alan Ng">
+        </div>
+        <div class="field">
+          <label for="fContactOrg">Organisation / faculty</label>
+          <input id="fContactOrg" type="text" placeholder="e.g. School of Business">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="fContactEmail">Email</label>
+          <input id="fContactEmail" type="email" placeholder="name@example.com">
+        </div>
+        <div class="field">
+          <label for="fContactPhone">Phone</label>
+          <input id="fContactPhone" type="tel" placeholder="+61 4XX XXX XXX">
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <span class="group-label">Timeline</span>
+      <div class="row2">
+        <div class="field">
+          <label for="fStart">Start date</label>
+          <input id="fStart" type="date">
+        </div>
+        <div class="field">
+          <label for="fDue">Due date</label>
+          <input id="fDue" type="date">
+        </div>
+      </div>
+      <p class="group-sub" style="margin-top:14px;">Milestones</p>
+      <div class="dyn-list" id="milestoneList"></div>
+      <button type="button" class="add-row-btn" id="addMilestoneBtn">+ Add milestone</button>
+    </div>
+
+    <div class="panel">
+      <span class="group-label">Additional details</span>
+      <div class="field">
+        <label for="fTags">Tags / keywords</label>
+        <input id="fTags" type="text" placeholder="e.g. finance, first-year, accessibility">
+        <p class="hint">Comma-separated. Helps with search and filtering later.</p>
+      </div>
+      <div class="field">
+        <label for="fLinks">Reference links</label>
+        <textarea id="fLinks" placeholder="Script docs, briefs, Drive folders — one per line"></textarea>
+      </div>
+      <div class="field">
+        <label for="fNotes">Notes</label>
+        <textarea id="fNotes" placeholder="Blockers, dependencies, anything the team should know"></textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a class="btn-ghost" href="short-form-learning-tracker.html">Cancel</a>
+      <button class="btn-primary" type="submit" id="saveBtn">Save project</button>
+    </div>
+    <div id="formStatus"></div>
+  </form>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="data-client.js"></script>
+<script>
+let editingId = null;
+
+function uid(){ return 'b_' + Math.random().toString(36).slice(2,10); }
+function getParam(name){ return new URLSearchParams(window.location.search).get(name); }
+
+function bindCheckPills(container){
+  container.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(inp => {
+    inp.addEventListener('change', () => {
+      if(inp.type === 'radio'){
+        document.querySelectorAll(`input[name="${inp.name}"]`).forEach(sib => {
+          sib.closest('.check-pill').classList.toggle('active', sib.checked);
+        });
+      } else {
+        inp.closest('.check-pill').classList.toggle('active', inp.checked);
+      }
+    });
+  });
+}
+document.querySelectorAll('.pillrow').forEach(bindCheckPills);
+
+document.getElementById('typeOtherCheck').addEventListener('change', (e) => {
+  document.getElementById('fTypeOther').style.display = e.target.checked ? 'block' : 'none';
+});
+document.getElementById('fFormat').addEventListener('change', (e) => {
+  document.getElementById('fFormatOther').style.display = e.target.value === 'other' ? 'block' : 'none';
+});
+document.getElementById('fOwner').addEventListener('change', (e) => {
+  document.getElementById('fOwnerOther').style.display = e.target.value === 'other' ? 'block' : 'none';
+});
+
+// --- Dynamic team rows ---
+function addTeamRow(name = '', role = ''){
+  const list = document.getElementById('teamList');
+  const row = document.createElement('div');
+  row.className = 'dyn-row';
+  row.innerHTML = `
+    <div class="field"><input type="text" class="team-name" placeholder="Name" value="${escapeAttr(name)}"></div>
+    <div class="field"><input type="text" class="team-role" placeholder="Role (e.g. Instructional designer)" value="${escapeAttr(role)}"></div>
+    <button type="button" class="remove-row">×</button>
+  `;
+  row.querySelector('.remove-row').addEventListener('click', () => row.remove());
+  list.appendChild(row);
+}
+document.getElementById('addTeamBtn').addEventListener('click', () => addTeamRow());
+
+// --- Dynamic milestone rows ---
+function addMilestoneRow(label = '', date = '', done = false){
+  const list = document.getElementById('milestoneList');
+  const row = document.createElement('div');
+  row.className = 'dyn-row';
+  row.innerHTML = `
+    <div class="field"><input type="text" class="ms-label" placeholder="Milestone (e.g. Script approved)" value="${escapeAttr(label)}"></div>
+    <div class="field"><input type="date" class="ms-date" value="${escapeAttr(date)}"></div>
+    <div class="field-check">
+      <label class="check-pill" style="padding:9px 10px;">
+        <input type="checkbox" class="ms-done" ${done ? 'checked' : ''}>
+        <span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg></span>Done
+      </label>
+    </div>
+    <button type="button" class="remove-row">×</button>
+  `;
+  const msBox = row.querySelector('.check-pill');
+  row.querySelector('.ms-done').addEventListener('change', e => msBox.classList.toggle('active', e.target.checked));
+  if(done) msBox.classList.add('active');
+  row.querySelector('.remove-row').addEventListener('click', () => row.remove());
+  list.appendChild(row);
+}
+document.getElementById('addMilestoneBtn').addEventListener('click', () => addMilestoneRow());
+
+function escapeAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
+
+function setChecked(container, selector, values){
+  container.querySelectorAll(selector).forEach(inp => {
+    if(values.includes(inp.value)){
+      inp.checked = true;
+      inp.closest('.check-pill').classList.add('active');
+    }
+  });
+}
+function setRadio(name, value){
+  const inp = document.querySelector(`input[name="${name}"][value="${value}"]`);
+  if(inp){ inp.checked = true; inp.closest('.check-pill').classList.add('active'); }
+}
+
+async function loadForEdit(id){
+  let b = null;
+  try{
+    b = await window.BuildsAPI.fetchOne(id);
+  }catch(e){
+    console.error('Could not load project:', e);
+    document.getElementById('formStatus').textContent = 'Could not load this project — check firebase-config.js';
+    return;
+  }
+  if(!b){
+    document.getElementById('formStatus').textContent = 'Project not found.';
+    return;
+  }
+
+  document.getElementById('pageHeading').textContent = 'Edit project';
+  document.getElementById('saveBtn').textContent = 'Save changes';
+  document.getElementById('fTitle').value = b.title || '';
+  document.getElementById('fDescription').value = b.description || '';
+
+  const types = b.projectTypes || [];
+  const knownTypes = ['Credential','Short Course','Professional Development'];
+  setChecked(document.getElementById('typePills'), 'input[type="checkbox"]', types.filter(t => knownTypes.includes(t)));
+  const otherType = types.find(t => !knownTypes.includes(t));
+  if(otherType){
+    document.getElementById('typeOtherCheck').checked = true;
+    document.getElementById('typeOtherPill').classList.add('active');
+    document.getElementById('fTypeOther').style.display = 'block';
+    document.getElementById('fTypeOther').value = otherType;
+  }
+
+  if(b.creditStatus) setRadio('credit', b.creditStatus);
+  if(b.buildApproach) setRadio('approach', b.buildApproach);
+  if(b.isVideoProject){
+    document.getElementById('fIsVideo').checked = true;
+    document.getElementById('fIsVideo').closest('.check-pill').classList.add('active');
+  }
+
+  document.getElementById('fFormat').value = b.format || 'video';
+  if(b.format === 'other'){
+    document.getElementById('fFormatOther').style.display = 'block';
+    document.getElementById('fFormatOther').value = b.formatOther || '';
+  }
+  document.getElementById('fStage').value = b.stage || 'idea';
+  document.getElementById('fPriority').value = b.priority || 'medium';
+  const namedOwners = ['Oliver','Miah','Eleanor','Glenn','Gorgia'];
+  if(b.owner && namedOwners.includes(b.owner)){
+    document.getElementById('fOwner').value = b.owner;
+  } else if(b.owner){
+    document.getElementById('fOwner').value = 'other';
+    document.getElementById('fOwnerOther').style.display = 'block';
+    document.getElementById('fOwnerOther').value = b.owner;
+  }
+
+  (b.team || []).forEach(t => addTeamRow(t.name, t.role));
+
+  if(b.stakeholderType) setRadio('stakeholder', b.stakeholderType);
+  const c = b.contact || {};
+  document.getElementById('fContactName').value = c.name || '';
+  document.getElementById('fContactOrg').value = c.org || '';
+  document.getElementById('fContactEmail').value = c.email || '';
+  document.getElementById('fContactPhone').value = c.phone || '';
+
+  document.getElementById('fStart').value = b.start || '';
+  document.getElementById('fDue').value = b.due || '';
+  (b.milestones || []).forEach(m => addMilestoneRow(m.label, m.date, m.done));
+
+  document.getElementById('fTags').value = (b.tags || []).join(', ');
+  document.getElementById('fLinks').value = b.links || '';
+  document.getElementById('fNotes').value = b.notes || '';
+}
+
+document.getElementById('projectForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const title = document.getElementById('fTitle').value.trim();
+  const ownerSel = document.getElementById('fOwner').value;
+  const owner = ownerSel === 'other' ? document.getElementById('fOwnerOther').value.trim() : ownerSel;
+  if(!title){ document.getElementById('fTitle').focus(); return; }
+  if(!owner){ document.getElementById('fOwner').focus(); return; }
+
+  const projectTypes = [...document.querySelectorAll('#typePills input[type="checkbox"]:checked')]
+    .map(inp => inp.value === 'Other' ? (document.getElementById('fTypeOther').value.trim() || 'Other') : inp.value);
+
+  const team = [...document.querySelectorAll('#teamList .dyn-row')].map(row => ({
+    name: row.querySelector('.team-name').value.trim(),
+    role: row.querySelector('.team-role').value.trim()
+  })).filter(t => t.name || t.role);
+
+  const milestones = [...document.querySelectorAll('#milestoneList .dyn-row')].map(row => ({
+    label: row.querySelector('.ms-label').value.trim(),
+    date: row.querySelector('.ms-date').value,
+    done: row.querySelector('.ms-done').checked
+  })).filter(m => m.label || m.date);
+
+  const creditEl = document.querySelector('input[name="credit"]:checked');
+  const approachEl = document.querySelector('input[name="approach"]:checked');
+  const stakeholderEl = document.querySelector('input[name="stakeholder"]:checked');
+
+  const data = {
+    title,
+    description: document.getElementById('fDescription').value.trim(),
+    projectTypes,
+    creditStatus: creditEl ? creditEl.value : '',
+    buildApproach: approachEl ? approachEl.value : '',
+    isVideoProject: document.getElementById('fIsVideo').checked,
+    format: document.getElementById('fFormat').value,
+    formatOther: document.getElementById('fFormatOther').value.trim(),
+    stage: document.getElementById('fStage').value,
+    priority: document.getElementById('fPriority').value,
+    owner,
+    team,
+    stakeholderType: stakeholderEl ? stakeholderEl.value : '',
+    contact: {
+      name: document.getElementById('fContactName').value.trim(),
+      org: document.getElementById('fContactOrg').value.trim(),
+      email: document.getElementById('fContactEmail').value.trim(),
+      phone: document.getElementById('fContactPhone').value.trim()
+    },
+    start: document.getElementById('fStart').value,
+    due: document.getElementById('fDue').value,
+    milestones,
+    tags: document.getElementById('fTags').value.split(',').map(t => t.trim()).filter(Boolean),
+    links: document.getElementById('fLinks').value.trim(),
+    notes: document.getElementById('fNotes').value.trim()
+  };
+
+  const statusEl = document.getElementById('formStatus');
+  statusEl.textContent = 'Saving…';
+  try{
+    if(editingId){
+      await window.BuildsAPI.update(editingId, data);
+    } else {
+      await window.BuildsAPI.insert({ id: uid(), createdAt: new Date().toISOString(), ...data });
+    }
+    window.location.href = 'short-form-learning-tracker.html';
+  }catch(err){
+    console.error(err);
+    statusEl.textContent = 'Could not save — try again.';
+  }
+});
+
+// Init
+addMilestoneRow();
+const idParam = getParam('id');
+if(idParam){
+  editingId = idParam;
+  loadForEdit(idParam);
+}
+</script>
+</body>
+</html>
