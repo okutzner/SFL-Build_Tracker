@@ -216,6 +216,25 @@
   }
   .gantt-milestone.done{ background:var(--teal); }
 
+  .milestone-popover{
+    position:fixed; z-index:60; background:var(--panel); border:1px solid var(--border-strong);
+    border-radius:10px; padding:14px 16px; width:220px; box-shadow:0 8px 24px rgba(0,0,0,0.5);
+  }
+  .milestone-popover-close{
+    position:absolute; top:8px; right:10px; background:none; border:none; color:var(--text-soft);
+    font-size:16px; cursor:pointer; line-height:1;
+  }
+  .milestone-popover-close:hover{ color:var(--text); }
+  .milestone-popover-label{ font-weight:700; font-size:13.5px; margin-bottom:6px; padding-right:14px; }
+  .milestone-popover-date{ font-size:12px; color:var(--text-soft); margin-bottom:6px; }
+  .milestone-popover-status{
+    display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px;
+    margin-bottom:10px; text-transform:uppercase; letter-spacing:0.04em;
+  }
+  .milestone-popover-status.done{ background:var(--teal-soft); color:var(--teal); }
+  .milestone-popover-status.pending{ background:var(--gold-soft); color:var(--gold); }
+  .milestone-popover-project{ font-size:11.5px; color:var(--text-faint); border-top:1px solid var(--border); padding-top:8px; }
+
   /* Modal */
   .overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.65); display:none; align-items:center; justify-content:center; z-index:50; padding:20px; }
   .overlay.show{ display:flex; }
@@ -288,6 +307,13 @@
     </div>
     <div class="board" id="board"></div>
     <div class="gantt" id="gantt" style="display:none;"></div>
+    <div class="milestone-popover" id="milestonePopover" style="display:none;">
+      <button class="milestone-popover-close" id="milestonePopoverClose">×</button>
+      <div class="milestone-popover-label" id="mpLabel"></div>
+      <div class="milestone-popover-date" id="mpDate"></div>
+      <div class="milestone-popover-status" id="mpStatus"></div>
+      <div class="milestone-popover-project" id="mpProject"></div>
+    </div>
   </div>
 </div>
 
@@ -526,6 +552,8 @@ function renderStats(){
 }
 
 function render(){
+  const popEl = document.getElementById('milestonePopover');
+  if(popEl) popEl.style.display = 'none';
   populateFilterPills();
   renderStats();
   const label = currentView === 'gantt' ? 'Build timeline' : 'Build pipeline';
@@ -647,7 +675,7 @@ function renderGantt(){
     return;
   }
 
-  const starts = items.map(b => toDate(b.start || b.due));
+  const starts = items.map(b => toDate(b.start || (b.createdAt ? b.createdAt.slice(0,10) : null) || b.due));
   const dues = items.map(b => toDate(b.due));
   const milestoneDates = items.flatMap(b => (b.milestones || []).filter(m => m.date).map(m => toDate(m.date)));
   const today = new Date(new Date().toDateString());
@@ -692,7 +720,8 @@ function renderGantt(){
   let rowsHtml = '';
   items.forEach(b => {
     const fmt = FORMATS[b.format] || FORMATS.other;
-    let s = toDate(b.start || b.due);
+    const impliedStart = b.start || (b.createdAt ? b.createdAt.slice(0,10) : null) || b.due;
+    let s = toDate(impliedStart);
     let e = toDate(b.due);
     if(isNaN(s.getTime())) s = e;
     if(isNaN(e.getTime())) e = s;
@@ -715,7 +744,7 @@ function renderGantt(){
       const mOffset = daysBetween(rangeStart, md) * dayWidth;
       const doneClass = m.done ? 'done' : '';
       const label = m.label || 'Milestone';
-      milestonesHtml += `<div class="gantt-milestone ${doneClass}" style="left:${mOffset}px;" title="${escapeHtml(label)} — ${fmtDate(m.date)}${m.done ? ' (done)' : ''}"></div>`;
+      milestonesHtml += `<div class="gantt-milestone ${doneClass}" style="left:${mOffset}px;" data-label="${escapeHtml(label)}" data-date="${escapeHtml(m.date)}" data-done="${m.done ? '1' : '0'}" data-project="${escapeHtml(b.title)}"></div>`;
     });
 
     rowsHtml += `
@@ -750,7 +779,44 @@ function renderGantt(){
   gantt.querySelectorAll('.gantt-label').forEach(label => {
     label.addEventListener('click', () => openEdit(label.dataset.id));
   });
+  gantt.querySelectorAll('.gantt-milestone').forEach(marker => {
+    marker.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showMilestonePopover(marker, e);
+    });
+  });
 }
+
+function showMilestonePopover(marker, evt){
+  const pop = document.getElementById('milestonePopover');
+  const done = marker.dataset.done === '1';
+  document.getElementById('mpLabel').textContent = marker.dataset.label || 'Milestone';
+  document.getElementById('mpDate').textContent = fmtDate(marker.dataset.date);
+  const statusEl = document.getElementById('mpStatus');
+  statusEl.textContent = done ? 'Done' : 'Pending';
+  statusEl.className = 'milestone-popover-status ' + (done ? 'done' : 'pending');
+  document.getElementById('mpProject').textContent = 'Part of: ' + (marker.dataset.project || '');
+
+  pop.style.display = 'block';
+  const rect = marker.getBoundingClientRect();
+  const popWidth = 220;
+  let left = rect.left + rect.width/2 - popWidth/2;
+  left = Math.max(12, Math.min(left, window.innerWidth - popWidth - 12));
+  let top = rect.bottom + 8;
+  if(top + 140 > window.innerHeight) top = rect.top - 148;
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+function hideMilestonePopover(){
+  document.getElementById('milestonePopover').style.display = 'none';
+}
+document.getElementById('milestonePopoverClose').addEventListener('click', hideMilestonePopover);
+document.addEventListener('click', (e) => {
+  const pop = document.getElementById('milestonePopover');
+  if(pop.style.display === 'none') return;
+  if(pop.contains(e.target) || e.target.classList.contains('gantt-milestone')) return;
+  hideMilestonePopover();
+});
 
 // Modal handling
 const overlay = document.getElementById('overlay');
