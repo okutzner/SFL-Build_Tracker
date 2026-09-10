@@ -86,6 +86,15 @@
     border-radius:6px; width:34px; height:36px; margin-top:20px; cursor:pointer; font-size:15px; flex:none;
   }
   .remove-row:hover{ color:var(--red); border-color:var(--red); }
+  #documentList .remove-row{ margin-top:39px; }
+  .url-input-wrap{ position:relative; }
+  .url-input-wrap input{ padding-right:36px; }
+  .open-link-btn{
+    position:absolute; right:5px; top:50%; transform:translateY(-50%);
+    background:none; border:none; color:var(--text-soft); cursor:pointer;
+    font-size:15px; padding:4px 6px; line-height:1; border-radius:5px;
+  }
+  .open-link-btn:hover{ color:var(--gold); background:rgba(224,167,58,0.12); }
   .add-row-btn{
     background:none; border:1px dashed var(--border-strong); color:var(--text-soft);
     border-radius:7px; padding:9px 14px; font-size:13px; cursor:pointer; align-self:flex-start;
@@ -275,15 +284,18 @@
     </div>
 
     <div class="panel">
+      <span class="group-label">Documents &amp; notes</span>
+      <p class="group-sub" style="margin-top:-4px;">Link out to OneDrive notes, briefs, scripts, or any other supporting documents.</p>
+      <div class="dyn-list" id="documentList"></div>
+      <button type="button" class="add-row-btn" id="addDocumentBtn">+ Add document link</button>
+    </div>
+
+    <div class="panel">
       <span class="group-label">Additional details</span>
       <div class="field">
         <label for="fTags">Tags / keywords</label>
         <input id="fTags" type="text" placeholder="e.g. finance, first-year, accessibility">
         <p class="hint">Comma-separated. Helps with search and filtering later.</p>
-      </div>
-      <div class="field">
-        <label for="fLinks">Reference links</label>
-        <textarea id="fLinks" placeholder="Script docs, briefs, Drive folders — one per line"></textarea>
       </div>
       <div class="field">
         <label for="fNotes">Notes</label>
@@ -374,6 +386,32 @@ function addMilestoneRow(label = '', date = '', done = false){
 }
 document.getElementById('addMilestoneBtn').addEventListener('click', () => addMilestoneRow());
 
+function addDocumentRow(label = '', url = ''){
+  const list = document.getElementById('documentList');
+  const row = document.createElement('div');
+  row.className = 'dyn-row';
+  row.innerHTML = `
+    <div class="field"><label>Title</label><input type="text" class="doc-label" placeholder="e.g. Meeting notes" value="${escapeAttr(label)}"></div>
+    <div class="field">
+      <label>URL</label>
+      <div class="url-input-wrap">
+        <input type="url" class="doc-url" placeholder="https://curtin-my.sharepoint.com/..." value="${escapeAttr(url)}">
+        <button type="button" class="open-link-btn" title="Open link in new tab">↗</button>
+      </div>
+    </div>
+    <button type="button" class="remove-row">×</button>
+  `;
+  row.querySelector('.remove-row').addEventListener('click', () => row.remove());
+  row.querySelector('.open-link-btn').addEventListener('click', () => {
+    let val = row.querySelector('.doc-url').value.trim();
+    if(!val) return;
+    if(!/^https?:\/\//i.test(val)) val = 'https://' + val;
+    window.open(val, '_blank', 'noopener,noreferrer');
+  });
+  list.appendChild(row);
+}
+document.getElementById('addDocumentBtn').addEventListener('click', () => addDocumentRow());
+
 function escapeAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
 
 function setChecked(container, selector, values){
@@ -456,8 +494,14 @@ async function loadForEdit(id){
   document.getElementById('fDue').value = b.due || '';
   (b.milestones || []).forEach(m => addMilestoneRow(m.label, m.date, m.done));
 
+  if(b.documents && b.documents.length){
+    b.documents.forEach(d => addDocumentRow(d.label, d.url));
+  } else if(b.links){
+    // Migrate the old free-text "Reference links" field, one line per row.
+    b.links.split('\n').map(l => l.trim()).filter(Boolean).forEach(l => addDocumentRow('', l));
+  }
+
   document.getElementById('fTags').value = (b.tags || []).join(', ');
-  document.getElementById('fLinks').value = b.links || '';
   document.getElementById('fNotes').value = b.notes || '';
 
   if(window.location.hash === '#milestones'){
@@ -492,6 +536,11 @@ document.getElementById('projectForm').addEventListener('submit', async (e) => {
     done: row.querySelector('.ms-done').checked
   })).filter(m => m.label || m.date);
 
+  const documents = [...document.querySelectorAll('#documentList .dyn-row')].map(row => ({
+    label: row.querySelector('.doc-label').value.trim(),
+    url: row.querySelector('.doc-url').value.trim()
+  })).filter(d => d.label || d.url);
+
   const creditEl = document.querySelector('input[name="credit"]:checked');
   const approachEl = document.querySelector('input[name="approach"]:checked');
   const stakeholderEl = document.querySelector('input[name="stakeholder"]:checked');
@@ -521,7 +570,7 @@ document.getElementById('projectForm').addEventListener('submit', async (e) => {
     due: document.getElementById('fDue').value,
     milestones,
     tags: document.getElementById('fTags').value.split(',').map(t => t.trim()).filter(Boolean),
-    links: document.getElementById('fLinks').value.trim(),
+    documents,
     notes: document.getElementById('fNotes').value.trim()
   };
 
