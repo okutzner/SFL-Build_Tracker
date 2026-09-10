@@ -218,6 +218,12 @@
     z-index:4; cursor:default; box-shadow:0 0 0 1px rgba(255,255,255,0.15);
   }
   .gantt-milestone.done{ background:var(--teal); }
+  .gantt-milestone-label{
+    position:absolute; top:12px; height:22px; line-height:22px;
+    font-size:10.5px; font-weight:700; color:var(--gold); white-space:nowrap;
+    pointer-events:none; z-index:5; text-shadow:0 1px 3px rgba(0,0,0,0.7), 0 0 4px rgba(0,0,0,0.5);
+  }
+  .gantt-milestone-label.done{ color:var(--teal); }
 
   .milestone-popover{
     position:fixed; z-index:60; background:var(--panel); border:1px solid var(--border-strong);
@@ -786,6 +792,7 @@ function renderGantt(){
     }
 
     let milestonesHtml = '';
+    const showMilestoneLabels = dayWidth >= GANTT_DAY_WIDTH_DEFAULT;
     (b.milestones || []).forEach((m, mIdx) => {
       if(!m.date) return;
       const md = toDate(m.date);
@@ -793,6 +800,9 @@ function renderGantt(){
       const doneClass = m.done ? 'done' : '';
       const label = m.label || 'Milestone';
       milestonesHtml += `<div class="gantt-milestone ${doneClass}" style="left:${mOffset}px;" data-label="${escapeHtml(label)}" data-date="${escapeHtml(m.date)}" data-done="${m.done ? '1' : '0'}" data-project="${escapeHtml(b.title)}" data-build-id="${b.id}" data-index="${mIdx}"></div>`;
+      if(showMilestoneLabels){
+        milestonesHtml += `<div class="gantt-milestone-label ${doneClass}" style="left:${mOffset + 9}px;">${escapeHtml(label)}</div>`;
+      }
     });
 
     rowsHtml += `
