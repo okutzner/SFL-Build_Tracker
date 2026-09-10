@@ -543,10 +543,10 @@ function populateFilterPills(){
   ).join('');
 
   fmtWrap.querySelectorAll('.pill').forEach(btn => {
-    btn.addEventListener('click', () => { filterFormat = btn.dataset.value; render(); });
+    btn.addEventListener('click', () => { filterFormat = btn.dataset.value; ganttNeedsScrollToToday = true; render(); });
   });
   ownerWrap.querySelectorAll('.pill').forEach(btn => {
-    btn.addEventListener('click', () => { filterOwner = btn.dataset.value; render(); });
+    btn.addEventListener('click', () => { filterOwner = btn.dataset.value; ganttNeedsScrollToToday = true; render(); });
   });
 
   document.getElementById('formatOtherFilterInput').style.display = filterFormat === 'other' ? 'block' : 'none';
