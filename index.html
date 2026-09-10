@@ -198,10 +198,13 @@
   .gantt-track .weekend-band{ position:absolute; top:0; bottom:0; background:rgba(255,255,255,0.045); z-index:0; }
   .gantt-bar{
     position:absolute; top:9px; height:28px; border-radius:6px; min-width:14px;
-    display:flex; align-items:center; padding:0 9px;
     font-size:11.5px; color:var(--text); font-weight:700; white-space:nowrap;
-    overflow:hidden; cursor:pointer; border-width:1.5px; border-style:solid;
+    line-height:28px; overflow:hidden; cursor:pointer; border-width:1.5px; border-style:solid;
     box-shadow:0 1px 3px rgba(0,0,0,0.35);
+  }
+  .gantt-bar .bar-label{
+    position:sticky; left:0; display:inline-block; padding:0 9px;
+    max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:top;
   }
   .gantt-bar.stage-idea{ border-style:dashed; box-shadow:none; font-weight:600; opacity:0.85; }
   .gantt-bar{ z-index:2; }
@@ -787,7 +790,7 @@ function renderGantt(){
           ${gridlines}
           <div class="today-line" style="left:${todayOffset}px;" title="Today"></div>
           <div class="gantt-bar ${b.stage === 'idea' ? 'stage-idea' : ''}" data-id="${b.id}" style="left:${offset}px; width:${span}px; background:${fmt.color}${b.stage === 'idea' ? '18' : '33'}; border-color:${fmt.color};">
-            ${escapeHtml(b.title)}
+            <span class="bar-label">${escapeHtml(b.title)}</span>
           </div>
           ${milestonesHtml}
         </div>
