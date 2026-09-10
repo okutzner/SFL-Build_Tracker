@@ -220,7 +220,6 @@
           <option value="Eleanor">Eleanor</option>
           <option value="Glenn">Glenn</option>
           <option value="Gorgia">Gorgia</option>
-          <option value="Rebecca">Rebecca</option>
           <option value="other">Other</option>
         </select>
         <input id="fOwnerOther" type="text" placeholder="Enter owner name" style="display:none; margin-top:8px;">
@@ -435,7 +434,7 @@ async function loadForEdit(id){
   document.getElementById('fStage').value = b.stage || 'idea';
   document.getElementById('fPriority').value = b.priority || 'medium';
   document.getElementById('fCanvasNumber').value = b.canvasNumber || '';
-  const namedOwners = ['Oliver','Becca','Miah','Eleanor','Glenn','Gorgia','Rebecca'];
+  const namedOwners = ['Oliver','Becca','Miah','Eleanor','Glenn','Gorgia'];
   if(b.owner && namedOwners.includes(b.owner)){
     document.getElementById('fOwner').value = b.owner;
   } else if(b.owner){

@@ -5,7 +5,7 @@
 
 (function () {
   const STORAGE_KEY = 'sfl_tracker_identity';
-  const NAMES = ['Oliver', 'Becca', 'Miah', 'Eleanor', 'Glenn', 'Gorgia', 'Rebecca'];
+  const NAMES = ['Oliver', 'Becca', 'Miah', 'Eleanor', 'Glenn', 'Gorgia'];
 
   function getStored() {
     try { return localStorage.getItem(STORAGE_KEY) || null; }
