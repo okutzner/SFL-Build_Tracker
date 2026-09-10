@@ -168,13 +168,14 @@
   .gantt{ overflow-x:auto; }
   .gantt-inner{ position:relative; }
   .gantt-axis{ position:sticky; top:0; z-index:4; background:var(--panel-alt); }
-  .axis-months{ display:flex; padding-left:260px; height:24px; }
+  .axis-months{ display:flex; height:24px; }
+  .axis-corner{ flex:none; width:260px; position:sticky; left:0; z-index:6; background:var(--panel-alt); }
   .axis-months .month-block{
     flex:none; font-size:10.5px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase;
     color:var(--text-soft); border-left:1px solid var(--border); padding:4px 0 0 6px; box-sizing:border-box;
     white-space:nowrap; overflow:hidden;
   }
-  .axis-days{ display:flex; padding-left:260px; height:26px; border-bottom:1px solid var(--border-strong); margin-bottom:6px; }
+  .axis-days{ display:flex; height:26px; border-bottom:1px solid var(--border-strong); margin-bottom:6px; }
   .axis-days .unit{
     flex:none; font-size:11px; color:var(--text-faint); border-left:1px solid var(--border);
     padding:4px 0 0 6px; box-sizing:border-box; white-space:nowrap; text-align:left;
@@ -182,9 +183,15 @@
   .axis-days .unit.weekend{ color:var(--text-soft); background:rgba(255,255,255,0.045); }
   .axis-days .unit.is-today{ color:var(--red); font-weight:700; }
   .gantt-row{ display:flex; align-items:center; height:46px; border-bottom:1px solid var(--border); }
+  .gantt-section-divider{
+    font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--text-faint); padding:10px 0 6px 4px; border-bottom:1px dashed var(--border-strong);
+  }
   .gantt-label{
-    flex:none; width:260px; padding-right:12px; font-size:12.5px; color:var(--text);
+    flex:none; width:260px; padding-right:12px; padding-left:2px; font-size:12.5px; color:var(--text);
     display:flex; align-items:flex-start; gap:6px; line-height:1.3; cursor:pointer;
+    position:sticky; left:0; z-index:5; background:var(--panel);
+    box-shadow:2px 0 6px rgba(0,0,0,0.25);
   }
   .gantt-label:hover .title-text{ color:var(--gold); }
   .gantt-label .title-text{
@@ -690,13 +697,20 @@ function daysBetween(a,b){ return Math.round((b-a)/dayMs()); }
 
 function renderGantt(){
   const gantt = document.getElementById('gantt');
+  const todayMidnight = new Date(new Date().toDateString());
+  const isPastDue = (b) => b.due && toDate(b.due) < todayMidnight;
 
   const items = builds
     .filter(b => matchesFormatFilter(b))
     .filter(b => matchesOwnerFilter(b.owner))
     .filter(b => b.due)
     .slice()
-    .sort((a,b) => (a.start||a.due).localeCompare(b.start||b.due));
+    .sort((a,b) => {
+      const aPast = isPastDue(a) ? 1 : 0;
+      const bPast = isPastDue(b) ? 1 : 0;
+      if(aPast !== bPast) return aPast - bPast;
+      return (a.start||a.due).localeCompare(b.start||b.due);
+    });
 
   if(items.length === 0){
     gantt.innerHTML = `<div class="gantt-empty">No builds with dates to show. Add a start or due date to see them on the timeline.</div>`;
@@ -706,7 +720,7 @@ function renderGantt(){
   const starts = items.map(b => toDate(b.start || (b.createdAt ? b.createdAt.slice(0,10) : null) || b.due));
   const dues = items.map(b => toDate(b.due));
   const milestoneDates = items.flatMap(b => (b.milestones || []).filter(m => m.date).map(m => toDate(m.date)));
-  const today = new Date(new Date().toDateString());
+  const today = todayMidnight;
   let rangeStart = new Date(Math.min(...starts, ...dues, ...milestoneDates, +addDays(today, -7)));
   let rangeEnd = new Date(Math.max(...starts, ...dues, ...milestoneDates, +addDays(today, 60)));
   rangeStart = addDays(rangeStart, -2);
@@ -750,7 +764,13 @@ function renderGantt(){
   const todayOffset = daysBetween(rangeStart, new Date(new Date().toDateString())) * dayWidth;
 
   let rowsHtml = '';
+  let dividerInserted = false;
+  const hasActiveAndDone = items.some(b => !isPastDue(b)) && items.some(b => isPastDue(b));
   items.forEach(b => {
+    if(hasActiveAndDone && !dividerInserted && isPastDue(b)){
+      rowsHtml += `<div class="gantt-section-divider">Past due date</div>`;
+      dividerInserted = true;
+    }
     const fmt = FORMATS[b.format] || FORMATS.other;
     const impliedStart = b.start || (b.createdAt ? b.createdAt.slice(0,10) : null) || b.due;
     let s = toDate(impliedStart);
@@ -800,8 +820,8 @@ function renderGantt(){
   gantt.innerHTML = `
     <div class="gantt-inner" style="width:${260 + trackWidth}px;">
       <div class="gantt-axis">
-        <div class="axis-months">${monthsHtml}</div>
-        <div class="axis-days">${daysHtml}</div>
+        <div class="axis-months"><div class="axis-corner"></div>${monthsHtml}</div>
+        <div class="axis-days"><div class="axis-corner"></div>${daysHtml}</div>
       </div>
       ${rowsHtml}
     </div>`;
