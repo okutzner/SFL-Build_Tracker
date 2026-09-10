@@ -9,6 +9,7 @@ HTML you can host on GitHub Pages (or any static host).
 
 - `index.html` — the board (Kanban + Timeline views)
 - `new-project.html` — the full "new project" intake form (also used for editing)
+- `identity.js` — the "who are you" name-selection layer that stamps changes for a basic audit trail
 - `data-client.js` — shared code that talks to Firestore (used by both pages)
 - `firebase-config.js` — **you edit this** with your own project's config
 - `firestore.rules` — paste these into the Firebase console once, to open up read/write access
@@ -89,3 +90,20 @@ tool on an unlisted URL, but:
   Firebase Authentication pairs with Firestore rules to restrict writes to
   signed-in users — worth doing before this holds anything you'd be upset
   to lose or have tampered with.
+
+## Who did what (audit trail)
+
+The first time anyone opens either page, they're asked to pick their name
+from the team list (or type another name under "Other"). That choice is
+remembered in their browser (not shared across devices), shown as a small
+badge in the top bar, and stamped onto everything they do:
+
+- Every project gets a `createdBy` and `lastEditedBy`/`lastEditedAt`.
+- Every create, edit, stage change, and delete is written to a separate
+  `activity` log in Firestore, viewable via the **"Activity log"** button
+  on the board.
+
+This is **not real authentication** — anyone can type any name, nothing is
+password-protected. It's an honesty system, not a security boundary. If
+you need to guarantee who actually made a change, that requires real
+sign-in (Firebase Authentication), which is a bigger step up from this.

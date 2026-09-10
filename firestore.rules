@@ -16,5 +16,8 @@ service cloud.firestore {
     match /builds/{buildId} {
       allow read, write: if true;
     }
+    match /activity/{entryId} {
+      allow read, write: if true;
+    }
   }
 }

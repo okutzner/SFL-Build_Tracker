@@ -95,6 +95,11 @@
   .add-row-btn:hover{ border-color:var(--gold); color:var(--gold); }
 
   .form-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:8px; }
+  @keyframes highlight-pulse{
+    0%{ box-shadow:0 0 0 0 rgba(224,167,58,0.5); }
+    100%{ box-shadow:0 0 0 10px rgba(224,167,58,0); }
+  }
+  .panel.jump-highlight{ animation:highlight-pulse 1.1s ease-out 2; border-color:var(--gold); }
   .btn-primary{ background:var(--gold); color:var(--gold-ink); border:none; border-radius:8px; padding:12px 20px; font-family:var(--font); font-weight:700; font-size:14px; cursor:pointer; }
   .btn-primary:hover{ filter:brightness(1.05); }
   .btn-ghost{ background:none; border:1px solid var(--border-strong); color:var(--text-soft); border-radius:8px; padding:11px 18px; font-size:14px; cursor:pointer; display:inline-flex; align-items:center; }
@@ -172,10 +177,8 @@
           <select id="fFormat">
             <option value="canvas">Canvas build</option>
             <option value="video">Video project</option>
-            <option value="interactive">Interactive build</option>
             <option value="written">Comms build</option>
             <option value="other">Other</option>
-            <option value="audio">Audio lesson</option>
           </select>
           <input id="fFormatOther" type="text" placeholder="Describe the format" style="display:none; margin-top:8px;">
         </div>
@@ -197,6 +200,11 @@
           <option value="low">Low</option>
         </select>
       </div>
+      <div class="field">
+        <label for="fCanvasNumber">Canvas #</label>
+        <input id="fCanvasNumber" type="text" placeholder="e.g. 48213">
+        <p class="hint">Canvas course number, if this build has one.</p>
+      </div>
     </div>
 
     <div class="panel">
@@ -206,10 +214,12 @@
         <select id="fOwner" required>
           <option value="">Select owner…</option>
           <option value="Oliver">Oliver</option>
+          <option value="Becca">Becca</option>
           <option value="Miah">Miah</option>
           <option value="Eleanor">Eleanor</option>
           <option value="Glenn">Glenn</option>
           <option value="Gorgia">Gorgia</option>
+          <option value="Rebecca">Rebecca</option>
           <option value="other">Other</option>
         </select>
         <input id="fOwnerOther" type="text" placeholder="Enter owner name" style="display:none; margin-top:8px;">
@@ -247,7 +257,7 @@
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="milestones">
       <span class="group-label">Timeline</span>
       <div class="row2">
         <div class="field">
@@ -292,6 +302,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script src="identity.js"></script>
 <script src="data-client.js"></script>
 <script>
 let editingId = null;
@@ -422,7 +433,8 @@ async function loadForEdit(id){
   }
   document.getElementById('fStage').value = b.stage || 'idea';
   document.getElementById('fPriority').value = b.priority || 'medium';
-  const namedOwners = ['Oliver','Miah','Eleanor','Glenn','Gorgia'];
+  document.getElementById('fCanvasNumber').value = b.canvasNumber || '';
+  const namedOwners = ['Oliver','Becca','Miah','Eleanor','Glenn','Gorgia','Rebecca'];
   if(b.owner && namedOwners.includes(b.owner)){
     document.getElementById('fOwner').value = b.owner;
   } else if(b.owner){
@@ -447,6 +459,15 @@ async function loadForEdit(id){
   document.getElementById('fTags').value = (b.tags || []).join(', ');
   document.getElementById('fLinks').value = b.links || '';
   document.getElementById('fNotes').value = b.notes || '';
+
+  if(window.location.hash === '#milestones'){
+    const panel = document.getElementById('milestones');
+    if(panel){
+      panel.scrollIntoView({ behavior:'smooth', block:'start' });
+      panel.classList.add('jump-highlight');
+      setTimeout(() => panel.classList.remove('jump-highlight'), 2400);
+    }
+  }
 }
 
 document.getElementById('projectForm').addEventListener('submit', async (e) => {
@@ -486,6 +507,7 @@ document.getElementById('projectForm').addEventListener('submit', async (e) => {
     formatOther: document.getElementById('fFormatOther').value.trim(),
     stage: document.getElementById('fStage').value,
     priority: document.getElementById('fPriority').value,
+    canvasNumber: document.getElementById('fCanvasNumber').value.trim(),
     owner,
     team,
     stakeholderType: stakeholderEl ? stakeholderEl.value : '',
@@ -519,11 +541,18 @@ document.getElementById('projectForm').addEventListener('submit', async (e) => {
 });
 
 // Init
-addMilestoneRow();
-const idParam = getParam('id');
-if(idParam){
-  editingId = idParam;
-  loadForEdit(idParam);
+function initPage(){
+  addMilestoneRow();
+  const idParam = getParam('id');
+  if(idParam){
+    editingId = idParam;
+    loadForEdit(idParam);
+  }
+}
+if(window.Identity){
+  window.Identity.require(() => { initPage(); });
+} else {
+  initPage();
 }
 </script>
 </body>

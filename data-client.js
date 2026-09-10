@@ -16,9 +16,28 @@
   firebase.initializeApp(window.FIREBASE_CONFIG);
   const db = firebase.firestore();
   const col = db.collection('builds');
+  const activityCol = db.collection('activity');
 
   function fromDoc(doc) {
     return { id: doc.id, ...doc.data() };
+  }
+
+  function whoAmI() {
+    try { return (window.Identity && window.Identity.get()) || 'Unknown'; }
+    catch (e) { return 'Unknown'; }
+  }
+
+  async function logActivity(action, buildId, buildTitle, details) {
+    try {
+      await activityCol.add({
+        action, buildId, buildTitle: buildTitle || '',
+        by: whoAmI(), at: new Date().toISOString(),
+        details: details || ''
+      });
+    } catch (e) {
+      // Activity logging should never block the actual save/edit.
+      console.error('Could not log activity:', e);
+    }
   }
 
   window.BuildsAPI = {
@@ -35,21 +54,34 @@
     async insert(build) {
       const { id, ...rest } = build;
       if (!rest.createdAt) rest.createdAt = new Date().toISOString();
+      rest.createdBy = whoAmI();
+      rest.lastEditedBy = whoAmI();
+      rest.lastEditedAt = new Date().toISOString();
       await col.doc(id).set(rest);
+      logActivity('created', id, rest.title);
     },
 
-    async update(id, patch) {
-      await col.doc(id).update(patch);
+    async update(id, patch, detailMsg) {
+      const stampedPatch = { ...patch, lastEditedBy: whoAmI(), lastEditedAt: new Date().toISOString() };
+      await col.doc(id).update(stampedPatch);
+      logActivity('updated', id, patch.title, detailMsg || 'updated details');
     },
 
-    async remove(id) {
+    async remove(id, titleForLog) {
       await col.doc(id).delete();
+      logActivity('deleted', id, titleForLog);
     },
 
     // Calls `callback` whenever any document changes (added/modified/removed),
     // from this browser or anyone else's. Returns the unsubscribe function.
     subscribeToChanges(callback) {
       return col.onSnapshot(callback, (err) => console.error('Realtime subscription error:', err));
+    },
+
+    // Returns the most recent activity entries, newest first.
+    async fetchActivity(limit) {
+      const snap = await activityCol.orderBy('at', 'desc').limit(limit || 40).get();
+      return snap.docs.map(fromDoc);
     }
   };
 })();

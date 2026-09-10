@@ -185,7 +185,7 @@
     flex:none; font-size:11px; color:var(--text-faint); border-left:1px solid var(--border);
     padding:4px 0 0 6px; box-sizing:border-box; white-space:nowrap; text-align:left;
   }
-  .axis-days .unit.weekend{ color:var(--text-soft); }
+  .axis-days .unit.weekend{ color:var(--text-soft); background:rgba(255,255,255,0.045); }
   .axis-days .unit.is-today{ color:var(--red); font-weight:700; }
   .gantt-row{ display:flex; align-items:center; height:46px; border-bottom:1px solid var(--border); }
   .gantt-label{
@@ -199,8 +199,9 @@
   }
   .gantt-label .dot{ width:7px; height:7px; border-radius:50%; flex:none; margin-top:4px; }
   .gantt-track{ position:relative; flex:1 1 auto; height:100%; }
-  .gantt-track .gridline{ position:absolute; top:0; bottom:0; width:1px; background:var(--border); }
+  .gantt-track .gridline{ position:absolute; top:0; bottom:0; width:1px; background:var(--border); z-index:1; }
   .gantt-track .today-line{ position:absolute; top:0; bottom:0; width:2px; background:var(--red); z-index:3; }
+  .gantt-track .weekend-band{ position:absolute; top:0; bottom:0; background:rgba(255,255,255,0.045); z-index:0; }
   .gantt-bar{
     position:absolute; top:9px; height:28px; border-radius:6px; min-width:14px;
     display:flex; align-items:center; padding:0 9px;
@@ -208,6 +209,8 @@
     overflow:hidden; cursor:pointer; border-width:1.5px; border-style:solid;
     box-shadow:0 1px 3px rgba(0,0,0,0.35);
   }
+  .gantt-bar.stage-idea{ border-style:dashed; box-shadow:none; font-weight:600; opacity:0.85; }
+  .gantt-bar{ z-index:2; }
   .gantt-empty{ padding:30px; text-align:center; color:var(--text-faint); font-size:13px; }
   .gantt-milestone{
     position:absolute; top:17px; width:12px; height:12px; margin-left:-6px;
@@ -225,14 +228,17 @@
     font-size:16px; cursor:pointer; line-height:1;
   }
   .milestone-popover-close:hover{ color:var(--text); }
-  .milestone-popover-label{ font-weight:700; font-size:13.5px; margin-bottom:6px; padding-right:14px; }
-  .milestone-popover-date{ font-size:12px; color:var(--text-soft); margin-bottom:6px; }
-  .milestone-popover-status{
-    display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px;
-    margin-bottom:10px; text-transform:uppercase; letter-spacing:0.04em;
+  .milestone-popover-label{
+    display:block; font-weight:700; font-size:13.5px; margin-bottom:6px; padding-right:14px;
+    color:var(--text); text-decoration:none; cursor:pointer;
   }
-  .milestone-popover-status.done{ background:var(--teal-soft); color:var(--teal); }
-  .milestone-popover-status.pending{ background:var(--gold-soft); color:var(--gold); }
+  .milestone-popover-label:hover{ color:var(--gold); text-decoration:underline; }
+  .milestone-popover-date{ font-size:12px; color:var(--text-soft); margin-bottom:10px; }
+  .milestone-popover-check{
+    display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text);
+    cursor:pointer; margin-bottom:10px; user-select:none;
+  }
+  .milestone-popover-check input{ width:16px; height:16px; cursor:pointer; accent-color:var(--teal); }
   .milestone-popover-project{ font-size:11.5px; color:var(--text-faint); border-top:1px solid var(--border); padding-top:8px; }
 
   /* Modal */
@@ -254,6 +260,13 @@
   .btn-ghost{ background:none; border:1px solid var(--border-strong); color:var(--text-soft); border-radius:7px; font-size:13px; cursor:pointer; padding:8px 14px; }
   .btn-delete{ color:var(--red); background:none; border:none; font-size:13px; cursor:pointer; }
   .note-shared{ font-size:12px; color:var(--text-faint); margin:-8px 0 18px; }
+  .activity-entry{
+    border:1px solid var(--border); border-radius:8px; padding:10px 12px; background:var(--panel-alt);
+  }
+  .activity-entry .who{ font-weight:700; color:var(--gold); }
+  .activity-entry .action{ font-size:13px; margin:3px 0; }
+  .activity-entry .when{ font-size:11.5px; color:var(--text-faint); }
+  .activity-empty{ text-align:center; color:var(--text-faint); font-size:13px; padding:20px; }
 </style>
 </head>
 <body>
@@ -283,7 +296,10 @@
       <input type="text" id="ownerOtherFilterInput" class="filter-other-input" placeholder="Filter by name…" style="display:none;">
     </div>
     <div class="panel-footer">
-      <a class="btn-primary" id="openAdd" href="new-project.html">+ New project</a>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <a class="btn-primary" id="openAdd" href="new-project.html">+ New project</a>
+        <button class="btn-ghost" id="openActivity" type="button">Activity log</button>
+      </div>
       <span class="updated" id="updatedAt"></span>
     </div>
   </div>
@@ -309,9 +325,12 @@
     <div class="gantt" id="gantt" style="display:none;"></div>
     <div class="milestone-popover" id="milestonePopover" style="display:none;">
       <button class="milestone-popover-close" id="milestonePopoverClose">×</button>
-      <div class="milestone-popover-label" id="mpLabel"></div>
+      <a href="#" class="milestone-popover-label" id="mpLabel"></a>
       <div class="milestone-popover-date" id="mpDate"></div>
-      <div class="milestone-popover-status" id="mpStatus"></div>
+      <label class="milestone-popover-check">
+        <input type="checkbox" id="mpDoneCheck">
+        <span>Mark as done</span>
+      </label>
       <div class="milestone-popover-project" id="mpProject"></div>
     </div>
   </div>
@@ -330,10 +349,8 @@
         <select id="fFormat">
           <option value="canvas">Canvas build</option>
           <option value="video">Video project</option>
-          <option value="interactive">Interactive build</option>
           <option value="written">Comms build</option>
           <option value="other">Other</option>
-          <option value="audio">Audio lesson</option>
         </select>
         <input id="fFormatOther" type="text" placeholder="Describe the format" style="display:none; margin-top:8px;">
       </div>
@@ -353,10 +370,12 @@
         <select id="fOwner">
           <option value="">Select owner…</option>
           <option value="Oliver">Oliver</option>
+          <option value="Becca">Becca</option>
           <option value="Miah">Miah</option>
           <option value="Eleanor">Eleanor</option>
           <option value="Glenn">Glenn</option>
           <option value="Gorgia">Gorgia</option>
+          <option value="Rebecca">Rebecca</option>
           <option value="other">Other</option>
         </select>
         <input id="fOwnerOther" type="text" placeholder="Enter owner name" style="display:none; margin-top:8px;">
@@ -397,9 +416,20 @@
   </div>
 </div>
 
+<div class="overlay" id="activityOverlay">
+  <div class="modal" style="max-width:480px;">
+    <h2>Activity log</h2>
+    <div id="activityList" style="max-height:400px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;"></div>
+    <div class="modal-actions" style="justify-content:flex-end;">
+      <button class="btn-ghost" id="activityCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script src="identity.js"></script>
 <script src="data-client.js"></script>
 <script>
 const STAGES = [
@@ -411,10 +441,8 @@ const STAGES = [
 const FORMATS = {
   canvas:{ label:'Canvas build', color:'#5B8DEF' },
   video:{ label:'Video project', color:'#E0A73A' },
-  interactive:{ label:'Interactive build', color:'#6FA8DC' },
   written:{ label:'Comms build', color:'#4FBFA8' },
-  other:{ label:'Other', color:'#9A9A9A' },
-  audio:{ label:'Audio lesson', color:'#9C8FC9' }
+  other:{ label:'Other', color:'#9A9A9A' }
 };
 const PRIORITY_COLOR = { high:'#E2735A', medium:'#E0A73A', low:'#4FBFA8' };
 
@@ -423,6 +451,7 @@ let editingId = null;
 let draggingId = null;
 let currentView = 'board';
 let ganttDayWidth = 34;
+let ganttNeedsScrollToToday = true;
 const GANTT_DAY_WIDTH_MIN = 14;
 const GANTT_DAY_WIDTH_MAX = 70;
 const GANTT_DAY_WIDTH_DEFAULT = 34;
@@ -430,7 +459,7 @@ let filterFormat = '';
 let filterOwner = '';
 let filterFormatText = '';
 let filterOwnerText = '';
-const NAMED_OWNERS = ['Oliver','Miah','Eleanor','Glenn','Gorgia'];
+const NAMED_OWNERS = ['Oliver','Becca','Miah','Eleanor','Glenn','Gorgia','Rebecca'];
 function matchesOwnerFilter(owner){
   if(!filterOwner) return true;
   if(filterOwner === '__other__'){
@@ -490,8 +519,8 @@ function seedData(){
   return [
     { id:uid(), title:'Intro to Compound Interest', format:'video', stage:'production', owner:'Oliver', start:inDays(-2), due:inDays(4), priority:'high', notes:'Script locked, filming Thursday.' },
     { id:uid(), title:'Reading a Payslip', format:'written', stage:'idea', owner:'Miah', start:inDays(1), due:inDays(10), priority:'medium', notes:'' },
-    { id:uid(), title:'Budgeting 101 Quiz', format:'interactive', stage:'review', owner:'Eleanor', start:inDays(-6), due:inDays(2), priority:'high', notes:'Waiting on final answer-key check.' },
-    { id:uid(), title:'What Is a Credit Score', format:'audio', stage:'published', owner:'Glenn', start:inDays(-10), due:inDays(-3), priority:'low', notes:'Live on the app.' }
+    { id:uid(), title:'Budgeting 101 Quiz', format:'canvas', stage:'review', owner:'Eleanor', start:inDays(-6), due:inDays(2), priority:'high', notes:'Waiting on final answer-key check.' },
+    { id:uid(), title:'What Is a Credit Score', format:'written', stage:'published', owner:'Glenn', start:inDays(-10), due:inDays(-3), priority:'low', notes:'Live on the app.' }
   ];
 }
 
@@ -612,7 +641,7 @@ function renderBoard(){
           b.stage = stage.id;
           render();
           try{
-            await window.BuildsAPI.update(b.id, { stage: stage.id });
+            await window.BuildsAPI.update(b.id, { stage: stage.id, title: b.title }, `moved to "${stage.label}"`);
             markSynced();
           }catch(err){
             console.error('Could not save stage change:', err);
@@ -690,12 +719,16 @@ function renderGantt(){
 
   // Day-number row + weekend/today highlighting
   let daysHtml = '';
+  let weekendBandsHtml = '';
   for(let i=0;i<totalDays;i++){
     const d = addDays(rangeStart, i);
     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
     const isToday = d.toDateString() === todayStr;
     const cls = ['unit', isWeekend ? 'weekend' : '', isToday ? 'is-today' : ''].filter(Boolean).join(' ');
     daysHtml += `<div class="${cls}" style="width:${dayWidth}px;">${d.getDate()}</div>`;
+    if(isWeekend){
+      weekendBandsHtml += `<div class="weekend-band" style="left:${i*dayWidth}px; width:${dayWidth}px;"></div>`;
+    }
   }
 
   // Month-band row: group consecutive days that share a month/year
@@ -738,13 +771,13 @@ function renderGantt(){
     }
 
     let milestonesHtml = '';
-    (b.milestones || []).forEach(m => {
+    (b.milestones || []).forEach((m, mIdx) => {
       if(!m.date) return;
       const md = toDate(m.date);
       const mOffset = daysBetween(rangeStart, md) * dayWidth;
       const doneClass = m.done ? 'done' : '';
       const label = m.label || 'Milestone';
-      milestonesHtml += `<div class="gantt-milestone ${doneClass}" style="left:${mOffset}px;" data-label="${escapeHtml(label)}" data-date="${escapeHtml(m.date)}" data-done="${m.done ? '1' : '0'}" data-project="${escapeHtml(b.title)}"></div>`;
+      milestonesHtml += `<div class="gantt-milestone ${doneClass}" style="left:${mOffset}px;" data-label="${escapeHtml(label)}" data-date="${escapeHtml(m.date)}" data-done="${m.done ? '1' : '0'}" data-project="${escapeHtml(b.title)}" data-build-id="${b.id}" data-index="${mIdx}"></div>`;
     });
 
     rowsHtml += `
@@ -754,9 +787,10 @@ function renderGantt(){
           <span class="title-text">${escapeHtml(b.title)}</span>
         </div>
         <div class="gantt-track" style="width:${trackWidth}px;">
+          ${weekendBandsHtml}
           ${gridlines}
           <div class="today-line" style="left:${todayOffset}px;" title="Today"></div>
-          <div class="gantt-bar" data-id="${b.id}" style="left:${offset}px; width:${span}px; background:${fmt.color}33; border-color:${fmt.color};">
+          <div class="gantt-bar ${b.stage === 'idea' ? 'stage-idea' : ''}" data-id="${b.id}" style="left:${offset}px; width:${span}px; background:${fmt.color}${b.stage === 'idea' ? '18' : '33'}; border-color:${fmt.color};">
             ${escapeHtml(b.title)}
           </div>
           ${milestonesHtml}
@@ -773,6 +807,12 @@ function renderGantt(){
       ${rowsHtml}
     </div>`;
 
+  if(ganttNeedsScrollToToday){
+    const desiredScroll = Math.max(0, todayOffset - gantt.clientWidth * 0.25);
+    gantt.scrollLeft = desiredScroll;
+    ganttNeedsScrollToToday = false;
+  }
+
   gantt.querySelectorAll('.gantt-bar').forEach(bar => {
     bar.addEventListener('click', () => openEdit(bar.dataset.id));
   });
@@ -787,14 +827,24 @@ function renderGantt(){
   });
 }
 
+let currentMilestoneRef = null;
+
 function showMilestonePopover(marker, evt){
   const pop = document.getElementById('milestonePopover');
   const done = marker.dataset.done === '1';
-  document.getElementById('mpLabel').textContent = marker.dataset.label || 'Milestone';
+  const buildId = marker.dataset.buildId;
+  const mIndex = parseInt(marker.dataset.index, 10);
+  currentMilestoneRef = { buildId, mIndex, marker };
+
+  const labelLink = document.getElementById('mpLabel');
+  labelLink.textContent = marker.dataset.label || 'Milestone';
+  labelLink.onclick = (e) => {
+    e.preventDefault();
+    window.location.href = `new-project.html?id=${buildId}#milestones`;
+  };
+
   document.getElementById('mpDate').textContent = fmtDate(marker.dataset.date);
-  const statusEl = document.getElementById('mpStatus');
-  statusEl.textContent = done ? 'Done' : 'Pending';
-  statusEl.className = 'milestone-popover-status ' + (done ? 'done' : 'pending');
+  document.getElementById('mpDoneCheck').checked = done;
   document.getElementById('mpProject').textContent = 'Part of: ' + (marker.dataset.project || '');
 
   pop.style.display = 'block';
@@ -803,12 +853,37 @@ function showMilestonePopover(marker, evt){
   let left = rect.left + rect.width/2 - popWidth/2;
   left = Math.max(12, Math.min(left, window.innerWidth - popWidth - 12));
   let top = rect.bottom + 8;
-  if(top + 140 > window.innerHeight) top = rect.top - 148;
+  if(top + 160 > window.innerHeight) top = rect.top - 168;
   pop.style.left = left + 'px';
   pop.style.top = top + 'px';
 }
+
+async function toggleMilestoneDone(newDone){
+  if(!currentMilestoneRef) return;
+  const { buildId, mIndex, marker } = currentMilestoneRef;
+  const b = builds.find(x => x.id === buildId);
+  if(!b || !b.milestones || !b.milestones[mIndex]) return;
+
+  const updatedMilestones = b.milestones.map((m, i) => i === mIndex ? { ...m, done: newDone } : m);
+  b.milestones = updatedMilestones;
+  marker.dataset.done = newDone ? '1' : '0';
+  marker.classList.toggle('done', newDone);
+
+  try{
+    const label = marker.dataset.label || 'Milestone';
+    await window.BuildsAPI.update(buildId, { milestones: updatedMilestones, title: b.title }, `marked "${label}" as ${newDone ? 'done' : 'pending'}`);
+    markSynced();
+  }catch(err){
+    console.error('Could not update milestone:', err);
+    document.getElementById('updatedAt').textContent = 'Could not save — try again';
+  }
+}
+document.getElementById('mpDoneCheck').addEventListener('change', (e) => {
+  toggleMilestoneDone(e.target.checked);
+});
 function hideMilestonePopover(){
   document.getElementById('milestonePopover').style.display = 'none';
+  currentMilestoneRef = null;
 }
 document.getElementById('milestonePopoverClose').addEventListener('click', hideMilestonePopover);
 document.addEventListener('click', (e) => {
@@ -852,6 +927,52 @@ function openEdit(id){
 function closeModal(){ overlay.classList.remove('show'); editingId = null; }
 
 document.getElementById('cancelBtn').addEventListener('click', closeModal);
+
+function relativeTime(iso){
+  const then = new Date(iso);
+  const diffMs = Date.now() - then.getTime();
+  const mins = Math.round(diffMs / 60000);
+  if(mins < 1) return 'just now';
+  if(mins < 60) return mins + ' min ago';
+  const hours = Math.round(mins / 60);
+  if(hours < 24) return hours + ' hr ago';
+  const days = Math.round(hours / 24);
+  if(days < 7) return days + ' day' + (days===1?'':'s') + ' ago';
+  return then.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+}
+const ACTION_VERBS = { created:'created', updated:'updated', deleted:'deleted' };
+async function openActivityLog(){
+  const overlay = document.getElementById('activityOverlay');
+  const list = document.getElementById('activityList');
+  list.innerHTML = '<div class="activity-empty">Loading…</div>';
+  overlay.classList.add('show');
+  try{
+    const entries = await window.BuildsAPI.fetchActivity(50);
+    if(entries.length === 0){
+      list.innerHTML = '<div class="activity-empty">No activity yet.</div>';
+      return;
+    }
+    list.innerHTML = entries.map(e => {
+      const verb = ACTION_VERBS[e.action] || e.action;
+      const title = e.buildTitle ? `“${escapeHtml(e.buildTitle)}”` : 'a project';
+      const detail = e.details ? ` — ${escapeHtml(e.details)}` : '';
+      return `<div class="activity-entry">
+        <div class="action"><span class="who">${escapeHtml(e.by)}</span> ${verb} ${title}${detail}</div>
+        <div class="when">${relativeTime(e.at)}</div>
+      </div>`;
+    }).join('');
+  }catch(err){
+    console.error('Could not load activity:', err);
+    list.innerHTML = '<div class="activity-empty">Could not load activity log.</div>';
+  }
+}
+document.getElementById('openActivity').addEventListener('click', openActivityLog);
+document.getElementById('activityCloseBtn').addEventListener('click', () => {
+  document.getElementById('activityOverlay').classList.remove('show');
+});
+document.getElementById('activityOverlay').addEventListener('click', (e) => {
+  if(e.target.id === 'activityOverlay') e.target.classList.remove('show');
+});
 overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
 document.getElementById('fFormat').addEventListener('change', (e) => {
   document.getElementById('fFormatOther').style.display = e.target.value === 'other' ? 'block' : 'none';
@@ -897,8 +1018,9 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
 
 document.getElementById('deleteBtn').addEventListener('click', async () => {
   if(!editingId) return;
+  const deletedBuild = builds.find(x => x.id === editingId);
   try{
-    await window.BuildsAPI.remove(editingId);
+    await window.BuildsAPI.remove(editingId, deletedBuild ? deletedBuild.title : '');
     builds = builds.filter(x => x.id !== editingId);
     markSynced();
     closeModal();
@@ -917,6 +1039,7 @@ document.getElementById('viewBoardBtn').addEventListener('click', () => {
 });
 document.getElementById('viewGanttBtn').addEventListener('click', () => {
   currentView = 'gantt';
+  ganttNeedsScrollToToday = true;
   document.getElementById('viewGanttBtn').classList.add('active');
   document.getElementById('viewBoardBtn').classList.remove('active');
   render();
@@ -924,14 +1047,17 @@ document.getElementById('viewGanttBtn').addEventListener('click', () => {
 
 document.getElementById('zoomInBtn').addEventListener('click', () => {
   ganttDayWidth = Math.min(GANTT_DAY_WIDTH_MAX, ganttDayWidth + 8);
+  ganttNeedsScrollToToday = true;
   renderGantt();
 });
 document.getElementById('zoomOutBtn').addEventListener('click', () => {
   ganttDayWidth = Math.max(GANTT_DAY_WIDTH_MIN, ganttDayWidth - 8);
+  ganttNeedsScrollToToday = true;
   renderGantt();
 });
 document.getElementById('zoomFitBtn').addEventListener('click', () => {
   ganttDayWidth = GANTT_DAY_WIDTH_DEFAULT;
+  ganttNeedsScrollToToday = true;
   renderGantt();
 });
 
@@ -946,9 +1072,15 @@ document.getElementById('ownerOtherFilterInput').addEventListener('input', (e) =
   if(currentView === 'gantt') renderGantt(); else renderBoard();
 });
 
-loadBuilds();
-if(window.BuildsAPI){
-  window.BuildsAPI.subscribeToChanges(() => { loadBuilds(); });
+if(window.Identity){
+  window.Identity.require(() => {
+    loadBuilds();
+    if(window.BuildsAPI){
+      window.BuildsAPI.subscribeToChanges(() => { loadBuilds(); });
+    }
+  });
+} else {
+  loadBuilds();
 }
 </script>
 </body>
