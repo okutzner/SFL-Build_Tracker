@@ -653,10 +653,6 @@ function renderMilestonesPanel(){
 async function loadBuilds(){
   try{
     builds = await window.BuildsAPI.fetchAll();
-    if(builds.length === 0){
-      for(const b of seedData()){ await window.BuildsAPI.insert(b); }
-      builds = await window.BuildsAPI.fetchAll();
-    }
     markSynced();
   }catch(e){
     console.error('Could not load builds:', e);

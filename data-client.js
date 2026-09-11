@@ -42,8 +42,15 @@
 
   window.BuildsAPI = {
     async fetchAll() {
-      const snap = await col.orderBy('createdAt', 'asc').get();
-      return snap.docs.map(fromDoc);
+      // Deliberately no server-side orderBy('createdAt') here: Firestore
+      // silently excludes any document missing the ordered field from the
+      // results (no error, just fewer/zero docs back), which is exactly
+      // what caused older documents without a createdAt stamp to vanish
+      // from the board. Fetch everything, then sort client-side instead.
+      const snap = await col.get();
+      const items = snap.docs.map(fromDoc);
+      items.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+      return items;
     },
 
     async fetchOne(id) {
