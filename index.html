@@ -83,6 +83,39 @@
     border-color:var(--gold); color:var(--gold); background:var(--gold-soft); font-weight:600;
   }
 
+  .dropdown-checklist{ position:relative; display:inline-block; max-width:100%; }
+  .dropdown-trigger{
+    background:var(--panel-alt); border:1px solid var(--border-strong); color:var(--text);
+    border-radius:8px; padding:9px 14px; font-family:var(--font); font-size:13px;
+    font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px; min-width:180px;
+    text-align:left; justify-content:space-between;
+  }
+  .dropdown-trigger:hover{ border-color:var(--text-soft); }
+  .dropdown-trigger:focus-visible{ outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(224,167,58,0.28); }
+  .dropdown-trigger.has-selection{ border-color:var(--gold); color:var(--gold); }
+  .dropdown-trigger .chevron{ font-size:10px; opacity:.7; transition:transform .12s ease; }
+  .dropdown-trigger[aria-expanded="true"] .chevron{ transform:rotate(180deg); }
+  .dropdown-panel{
+    position:absolute; top:calc(100% + 6px); left:0; z-index:30; min-width:220px;
+    background:var(--panel-alt); border:1px solid var(--border-strong); border-radius:10px;
+    padding:8px; box-shadow:0 10px 28px rgba(0,0,0,0.45); max-height:280px; overflow-y:auto;
+  }
+  .dropdown-item{
+    display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:6px;
+    font-size:13px; color:var(--text); cursor:pointer; user-select:none;
+  }
+  .dropdown-item:hover{ background:rgba(255,255,255,0.06); }
+  .dropdown-item input[type="checkbox"]{ width:15px; height:15px; accent-color:var(--gold); cursor:pointer; flex:none; }
+  .dropdown-item input[type="checkbox"]:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+  .dropdown-panel-footer{
+    display:flex; justify-content:flex-end; margin-top:4px; padding-top:8px; border-top:1px solid var(--border);
+  }
+  .dropdown-clear{
+    background:none; border:none; color:var(--text-faint); font-size:12px; font-family:var(--font);
+    text-decoration:underline; cursor:pointer; padding:2px;
+  }
+  .dropdown-clear:hover{ color:var(--gold); }
+
   .panel-footer{
     display:flex; align-items:center; justify-content:space-between;
     margin-top:18px; padding-top:16px; border-top:1px solid var(--border);
@@ -125,6 +158,31 @@
     font-weight:600; cursor:pointer;
   }
   .pill-toggle.active{ border-color:var(--teal); color:var(--teal); background:var(--teal-soft); }
+  .viewToggle-main .pill-toggle{
+    padding:11px 22px; font-size:14.5px; border-radius:24px; font-weight:700;
+  }
+
+  .milestones-panel{ margin-bottom:20px; }
+  .milestones-list{ max-height:340px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
+  .milestones-empty{ font-size:13px; color:var(--text-faint); padding:6px 2px; }
+  .milestone-row{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    background:var(--panel-alt); border:1px solid var(--border); border-radius:9px;
+    padding:11px 14px; cursor:pointer; transition:border-color .12s ease;
+  }
+  .milestone-row:hover{ border-color:var(--border-strong); }
+  .milestone-row:focus-visible{ outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(224,167,58,0.28); }
+  .milestone-row-main{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .milestone-row-label{ font-size:13.5px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .milestone-row-project{ font-size:12px; color:var(--text-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .milestone-badge{
+    flex:none; font-size:12px; font-weight:700; border-radius:20px; padding:5px 12px;
+    white-space:nowrap;
+  }
+  .milestone-badge-green{ color:#4FBFA8; background:rgba(79,191,168,0.14); border:1px solid rgba(79,191,168,0.4); }
+  .milestone-badge-yellow{ color:#E0C23A; background:rgba(224,194,58,0.14); border:1px solid rgba(224,194,58,0.4); }
+  .milestone-badge-orange{ color:#E28A3A; background:rgba(226,138,58,0.14); border:1px solid rgba(226,138,58,0.4); }
+  .milestone-badge-red{ color:#E2735A; background:rgba(226,115,90,0.14); border:1px solid rgba(226,115,90,0.4); }
 
   .board{
     display:grid; grid-template-columns:repeat(4, minmax(230px, 1fr)); gap:16px;
@@ -296,12 +354,22 @@
   <div class="panel filter-panel">
     <div class="filter-group">
       <span class="group-label">Format</span>
-      <div class="pillrow" id="formatPills"></div>
+      <div class="dropdown-checklist" id="formatFilterDropdown">
+        <button type="button" class="dropdown-trigger" id="formatFilterTrigger" aria-haspopup="listbox" aria-expanded="false">
+          <span id="formatFilterTriggerLabel">All formats</span><span class="chevron">▾</span>
+        </button>
+        <div class="dropdown-panel" id="formatFilterPanel" role="listbox" aria-multiselectable="true" style="display:none;"></div>
+      </div>
       <input type="text" id="formatOtherFilterInput" class="filter-other-input" placeholder="Filter by custom format…" style="display:none;">
     </div>
     <div class="filter-group">
       <span class="group-label">Owner</span>
-      <div class="pillrow" id="ownerPills"></div>
+      <div class="dropdown-checklist" id="ownerFilterDropdown">
+        <button type="button" class="dropdown-trigger" id="ownerFilterTrigger" aria-haspopup="listbox" aria-expanded="false">
+          <span id="ownerFilterTriggerLabel">All owners</span><span class="chevron">▾</span>
+        </button>
+        <div class="dropdown-panel" id="ownerFilterPanel" role="listbox" aria-multiselectable="true" style="display:none;"></div>
+      </div>
       <input type="text" id="ownerOtherFilterInput" class="filter-other-input" placeholder="Filter by name…" style="display:none;">
     </div>
     <div class="panel-footer">
@@ -315,6 +383,13 @@
 
   <div class="stats-row" id="stats"></div>
 
+  <div class="panel milestones-panel">
+    <div class="panel-head">
+      <span class="group-label">Upcoming milestones</span>
+    </div>
+    <div class="milestones-list" id="milestonesList"></div>
+  </div>
+
   <div class="panel main-panel">
     <div class="panel-head">
       <span class="group-label" id="mainPanelLabel">Build pipeline</span>
@@ -324,7 +399,7 @@
           <button class="pill-toggle" id="zoomFitBtn" title="Reset zoom">Reset</button>
           <button class="pill-toggle" id="zoomInBtn" title="Zoom in">+</button>
         </div>
-        <div class="viewToggle">
+        <div class="viewToggle viewToggle-main">
           <button class="pill-toggle active" id="viewBoardBtn" data-view="board">Board</button>
           <button class="pill-toggle" id="viewGanttBtn" data-view="gantt">Timeline</button>
         </div>
@@ -464,28 +539,29 @@ let ganttNeedsScrollToToday = true;
 const GANTT_DAY_WIDTH_MIN = 14;
 const GANTT_DAY_WIDTH_MAX = 70;
 const GANTT_DAY_WIDTH_DEFAULT = 34;
-let filterFormat = '';
-let filterOwner = '';
+let filterFormats = [];   // empty array = no filter, show all
+let filterOwners = [];    // empty array = no filter, show all
 let filterFormatText = '';
 let filterOwnerText = '';
+let formatFilterOpen = false;
+let ownerFilterOpen = false;
 const NAMED_OWNERS = ['Oliver','Becca','Miah','Eleanor','Glenn','Gorgia'];
 function matchesOwnerFilter(owner){
-  if(!filterOwner) return true;
-  if(filterOwner === '__other__'){
-    if(!owner || NAMED_OWNERS.includes(owner)) return false;
-    if(filterOwnerText) return owner.toLowerCase().includes(filterOwnerText.toLowerCase());
-    return true;
-  }
-  return owner === filterOwner;
+  if(filterOwners.length === 0) return true;
+  const isNamed = owner && NAMED_OWNERS.includes(owner);
+  if(isNamed) return filterOwners.includes(owner);
+  if(!filterOwners.includes('__other__')) return false;
+  if(!owner) return false;
+  if(filterOwnerText) return owner.toLowerCase().includes(filterOwnerText.toLowerCase());
+  return true;
 }
 function matchesFormatFilter(b){
-  if(!filterFormat) return true;
-  if(filterFormat === 'other'){
-    if(b.format !== 'other') return false;
-    if(filterFormatText) return (b.formatOther || '').toLowerCase().includes(filterFormatText.toLowerCase());
-    return true;
+  if(filterFormats.length === 0) return true;
+  if(!filterFormats.includes(b.format)) return false;
+  if(b.format === 'other' && filterFormatText){
+    return (b.formatOther || '').toLowerCase().includes(filterFormatText.toLowerCase());
   }
-  return b.format === filterFormat;
+  return true;
 }
 
 function uid(){ return 'b_' + Math.random().toString(36).slice(2,10); }
@@ -501,6 +577,63 @@ function fmtDate(d){
 function isOverdue(d, stage){
   if(!d || stage==='published') return false;
   return new Date(d+'T00:00:00') < new Date(new Date().toDateString());
+}
+
+function daysUntil(dateStr){
+  const target = new Date(dateStr+'T00:00:00');
+  const today = new Date(new Date().toDateString());
+  return Math.round((target - today) / 86400000);
+}
+function milestoneBucket(days){
+  if(days <= 0) return 'red';
+  if(days <= 5) return 'orange';
+  if(days <= 9) return 'yellow';
+  return 'green';
+}
+function milestoneDayLabel(days){
+  if(days === 0) return 'Due today';
+  if(days > 0) return `T\u2212${days} day${days===1?'':'s'}`;
+  const abs = Math.abs(days);
+  return `T+${abs} day${abs===1?'':'s'}`;
+}
+function collectUpcomingMilestones(){
+  const list = [];
+  builds.forEach(b => {
+    (b.milestones || []).forEach((m, mIdx) => {
+      if(m.done || !m.date) return;
+      list.push({
+        buildId: b.id,
+        buildTitle: b.title,
+        label: m.label || `Milestone ${mIdx+1}`,
+        days: daysUntil(m.date)
+      });
+    });
+  });
+  list.sort((a,b) => a.days - b.days);
+  return list;
+}
+function renderMilestonesPanel(){
+  const wrap = document.getElementById('milestonesList');
+  if(!wrap) return;
+  const items = collectUpcomingMilestones();
+  if(items.length === 0){
+    wrap.innerHTML = `<div class="milestones-empty">No upcoming milestones.</div>`;
+    return;
+  }
+  wrap.innerHTML = items.map(it => `
+    <div class="milestone-row" data-build-id="${it.buildId}" tabindex="0" role="button" aria-label="${escapeHtml(it.label)}, ${escapeHtml(it.buildTitle)}, ${milestoneDayLabel(it.days)}">
+      <div class="milestone-row-main">
+        <span class="milestone-row-label">${escapeHtml(it.label)}</span>
+        <span class="milestone-row-project">${escapeHtml(it.buildTitle)}</span>
+      </div>
+      <span class="milestone-badge milestone-badge-${milestoneBucket(it.days)}">${milestoneDayLabel(it.days)}</span>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('.milestone-row').forEach(row => {
+    const open = () => openEdit(row.dataset.buildId);
+    row.addEventListener('click', open);
+    row.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(); } });
+  });
 }
 
 async function loadBuilds(){
@@ -533,32 +666,105 @@ function seedData(){
   ];
 }
 
-function populateFilterPills(){
-  const fmtWrap = document.getElementById('formatPills');
-  const ownerWrap = document.getElementById('ownerPills');
-
-  const fmtButtons = [['','All formats']].concat(Object.entries(FORMATS).map(([k,v])=>[k,v.label]));
-  fmtWrap.innerHTML = fmtButtons.map(([val,label]) =>
-    `<button class="pill ${filterFormat===val?'active':''}" data-filter="format" data-value="${val}">${label}</button>`
-  ).join('');
-
-  const hasOtherOwner = builds.some(b => b.owner && !NAMED_OWNERS.includes(b.owner));
-  const ownerButtons = [['','All owners']].concat(NAMED_OWNERS.map(o=>[o,o]));
-  if(hasOtherOwner || filterOwner === '__other__') ownerButtons.push(['__other__','Other']);
-  ownerWrap.innerHTML = ownerButtons.map(([val,label]) =>
-    `<button class="pill ${filterOwner===val?'active':''}" data-filter="owner" data-value="${val}">${label}</button>`
-  ).join('');
-
-  fmtWrap.querySelectorAll('.pill').forEach(btn => {
-    btn.addEventListener('click', () => { filterFormat = btn.dataset.value; ganttNeedsScrollToToday = true; render(); });
-  });
-  ownerWrap.querySelectorAll('.pill').forEach(btn => {
-    btn.addEventListener('click', () => { filterOwner = btn.dataset.value; ganttNeedsScrollToToday = true; render(); });
-  });
-
-  document.getElementById('formatOtherFilterInput').style.display = filterFormat === 'other' ? 'block' : 'none';
-  document.getElementById('ownerOtherFilterInput').style.display = filterOwner === '__other__' ? 'block' : 'none';
+function summarizeSelection(selected, labelMap, allLabel){
+  if(selected.length === 0) return allLabel;
+  if(selected.length <= 2) return selected.map(v => labelMap[v] || v).join(', ');
+  return `${selected.length} selected`;
 }
+
+function populateFilterPills(){
+  // Format dropdown
+  const fmtTrigger = document.getElementById('formatFilterTrigger');
+  const fmtTriggerLabel = document.getElementById('formatFilterTriggerLabel');
+  const fmtPanel = document.getElementById('formatFilterPanel');
+  const fmtLabelMap = Object.fromEntries(Object.entries(FORMATS).map(([k,v])=>[k,v.label]));
+
+  fmtTriggerLabel.textContent = summarizeSelection(filterFormats, fmtLabelMap, 'All formats');
+  fmtTrigger.classList.toggle('has-selection', filterFormats.length > 0);
+  fmtTrigger.setAttribute('aria-expanded', formatFilterOpen ? 'true' : 'false');
+  fmtPanel.style.display = formatFilterOpen ? 'block' : 'none';
+  fmtPanel.innerHTML = Object.entries(FORMATS).map(([val,v]) => `
+    <label class="dropdown-item" role="option">
+      <input type="checkbox" data-filter="format" value="${val}" ${filterFormats.includes(val)?'checked':''}>
+      ${v.label}
+    </label>
+  `).join('') + `<div class="dropdown-panel-footer"><button type="button" class="dropdown-clear" data-clear="format">Clear</button></div>`;
+
+  fmtPanel.querySelectorAll('input[data-filter="format"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if(cb.checked) filterFormats = [...filterFormats, cb.value];
+      else filterFormats = filterFormats.filter(v => v !== cb.value);
+      ganttNeedsScrollToToday = true;
+      render();
+    });
+  });
+  fmtPanel.querySelector('[data-clear="format"]').addEventListener('click', () => {
+    filterFormats = []; ganttNeedsScrollToToday = true; render();
+  });
+
+  // Owner dropdown
+  const ownerTrigger = document.getElementById('ownerFilterTrigger');
+  const ownerTriggerLabel = document.getElementById('ownerFilterTriggerLabel');
+  const ownerPanel = document.getElementById('ownerFilterPanel');
+  const hasOtherOwner = builds.some(b => b.owner && !NAMED_OWNERS.includes(b.owner));
+  const ownerOptions = NAMED_OWNERS.slice();
+  if(hasOtherOwner || filterOwners.includes('__other__')) ownerOptions.push('__other__');
+  const ownerLabelMap = Object.fromEntries(NAMED_OWNERS.map(o=>[o,o]).concat([['__other__','Other']]));
+
+  ownerTriggerLabel.textContent = summarizeSelection(filterOwners, ownerLabelMap, 'All owners');
+  ownerTrigger.classList.toggle('has-selection', filterOwners.length > 0);
+  ownerTrigger.setAttribute('aria-expanded', ownerFilterOpen ? 'true' : 'false');
+  ownerPanel.style.display = ownerFilterOpen ? 'block' : 'none';
+  ownerPanel.innerHTML = ownerOptions.map(val => `
+    <label class="dropdown-item" role="option">
+      <input type="checkbox" data-filter="owner" value="${val}" ${filterOwners.includes(val)?'checked':''}>
+      ${ownerLabelMap[val]}
+    </label>
+  `).join('') + `<div class="dropdown-panel-footer"><button type="button" class="dropdown-clear" data-clear="owner">Clear</button></div>`;
+
+  ownerPanel.querySelectorAll('input[data-filter="owner"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if(cb.checked) filterOwners = [...filterOwners, cb.value];
+      else filterOwners = filterOwners.filter(v => v !== cb.value);
+      ganttNeedsScrollToToday = true;
+      render();
+    });
+  });
+  ownerPanel.querySelector('[data-clear="owner"]').addEventListener('click', () => {
+    filterOwners = []; ganttNeedsScrollToToday = true; render();
+  });
+
+  document.getElementById('formatOtherFilterInput').style.display = filterFormats.includes('other') ? 'block' : 'none';
+  document.getElementById('ownerOtherFilterInput').style.display = filterOwners.includes('__other__') ? 'block' : 'none';
+}
+
+// Toggling a dropdown open/closed is a pure UI-state change, not a filter
+// change — redraw just the dropdowns rather than the whole board.
+document.getElementById('formatFilterTrigger').addEventListener('click', () => {
+  formatFilterOpen = !formatFilterOpen;
+  ownerFilterOpen = false;
+  populateFilterPills();
+});
+document.getElementById('ownerFilterTrigger').addEventListener('click', () => {
+  ownerFilterOpen = !ownerFilterOpen;
+  formatFilterOpen = false;
+  populateFilterPills();
+});
+document.addEventListener('click', (e) => {
+  if(!formatFilterOpen && !ownerFilterOpen) return;
+  const insideFormat = document.getElementById('formatFilterDropdown').contains(e.target);
+  const insideOwner = document.getElementById('ownerFilterDropdown').contains(e.target);
+  if(!insideFormat && !insideOwner){
+    formatFilterOpen = false; ownerFilterOpen = false;
+    populateFilterPills();
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape' && (formatFilterOpen || ownerFilterOpen)){
+    formatFilterOpen = false; ownerFilterOpen = false;
+    populateFilterPills();
+  }
+});
 
 function renderStats(){
   const total = builds.length;
@@ -594,6 +800,7 @@ function render(){
   if(popEl) popEl.style.display = 'none';
   populateFilterPills();
   renderStats();
+  renderMilestonesPanel();
   const label = currentView === 'gantt' ? 'Build timeline' : 'Build pipeline';
   document.getElementById('mainPanelLabel').textContent = label;
   if(currentView === 'gantt'){
