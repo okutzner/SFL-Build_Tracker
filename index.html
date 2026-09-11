@@ -163,7 +163,11 @@
   }
 
   .milestones-panel{ margin-bottom:20px; }
-  .milestones-list{ max-height:340px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
+  .milestones-list{ max-height:340px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; transition:max-height .18s ease, opacity .15s ease; }
+  .milestones-list.collapsed{ max-height:0; opacity:0; overflow:hidden; gap:0; }
+  #milestonesCollapseBtn{ background:transparent; border:1px solid var(--border-strong); }
+  #milestonesCollapseBtn .chevron{ transition:transform .15s ease; display:inline-block; }
+  #milestonesCollapseBtn[aria-expanded="false"] .chevron{ transform:rotate(-90deg); }
   .milestones-empty{ font-size:13px; color:var(--text-faint); padding:6px 2px; }
   .milestone-row{
     display:flex; align-items:center; justify-content:space-between; gap:14px;
@@ -384,8 +388,11 @@
   <div class="stats-row" id="stats"></div>
 
   <div class="panel milestones-panel">
-    <div class="panel-head">
+    <div class="panel-head" id="milestonesPanelHead" style="cursor:pointer;">
       <span class="group-label">Upcoming milestones</span>
+      <button type="button" class="dropdown-trigger" id="milestonesCollapseBtn" style="min-width:auto; padding:6px 10px;" aria-expanded="true" aria-controls="milestonesList">
+        <span class="chevron" id="milestonesChevron">▾</span>
+      </button>
     </div>
     <div class="milestones-list" id="milestonesList"></div>
   </div>
@@ -765,6 +772,25 @@ document.addEventListener('keydown', (e) => {
     populateFilterPills();
   }
 });
+
+(function initMilestonesCollapse(){
+  const head = document.getElementById('milestonesPanelHead');
+  const list = document.getElementById('milestonesList');
+  const btn = document.getElementById('milestonesCollapseBtn');
+  const STORAGE_KEY = 'sfl-milestones-collapsed';
+
+  function setCollapsed(collapsed){
+    list.classList.toggle('collapsed', collapsed);
+    btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0');
+  }
+
+  setCollapsed(localStorage.getItem(STORAGE_KEY) === '1');
+
+  head.addEventListener('click', () => {
+    setCollapsed(!list.classList.contains('collapsed'));
+  });
+})();
 
 function renderStats(){
   const total = builds.length;
