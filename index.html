@@ -144,6 +144,13 @@
   .stat-card .value.gold{ color:var(--gold); }
   .stat-card .value.red{ color:var(--red); }
   .stat-card .sub{ font-size:12px; color:var(--text-faint); }
+  .stat-card.clickable{ cursor:pointer; transition:border-color .12s ease; }
+  .stat-card.clickable:hover{ border-color:var(--border-strong); }
+  .milestones-panel.flash{ animation:milestonesFlash 1s ease; }
+  @keyframes milestonesFlash{
+    0%{ box-shadow:0 0 0 3px rgba(226,115,90,0.55); }
+    100%{ box-shadow:0 0 0 3px rgba(226,115,90,0); }
+  }
 
   .main-panel{ padding-bottom:22px; }
   .panel-head{
@@ -387,7 +394,7 @@
 
   <div class="stats-row" id="stats"></div>
 
-  <div class="panel milestones-panel">
+  <div class="panel milestones-panel" id="milestonesPanel">
     <div class="panel-head" id="milestonesPanelHead" style="cursor:pointer;">
       <span class="group-label">Upcoming milestones</span>
       <button type="button" class="dropdown-trigger" id="milestonesCollapseBtn" style="min-width:auto; padding:6px 10px;" aria-expanded="true" aria-controls="milestonesList">
@@ -786,11 +793,29 @@ document.addEventListener('keydown', (e) => {
   }
 
   setCollapsed(localStorage.getItem(STORAGE_KEY) === '1');
+  window.setMilestonesCollapsed = setCollapsed;
 
   head.addEventListener('click', () => {
     setCollapsed(!list.classList.contains('collapsed'));
   });
 })();
+
+function jumpToMilestones(){
+  window.setMilestonesCollapsed(false);
+  const panel = document.getElementById('milestonesPanel');
+  panel.scrollIntoView({ behavior:'smooth', block:'start' });
+  panel.classList.remove('flash');
+  requestAnimationFrame(() => panel.classList.add('flash'));
+}
+document.getElementById('stats').addEventListener('click', (e) => {
+  if(e.target.closest('#statMilestonesOverdue')) jumpToMilestones();
+});
+document.getElementById('stats').addEventListener('keydown', (e) => {
+  if((e.key === 'Enter' || e.key === ' ') && e.target.closest('#statMilestonesOverdue')){
+    e.preventDefault();
+    jumpToMilestones();
+  }
+});
 
 function renderStats(){
   const total = builds.length;
@@ -813,7 +838,7 @@ function renderStats(){
       <div class="value">${published}</div>
       <span class="sub">live builds</span>
     </div>
-    <div class="stat-card">
+    <div class="stat-card clickable" id="statMilestonesOverdue" tabindex="0" role="button" aria-label="Show overdue milestones">
       <span class="label">Milestones Overdue</span>
       <div class="value ${overdueMilestones>0?'red':''}">${overdueMilestones}</div>
       <span class="sub">past milestone date</span>
