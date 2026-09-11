@@ -796,7 +796,7 @@ function renderStats(){
   const total = builds.length;
   const inReview = builds.filter(b=>b.stage==='review').length;
   const published = builds.filter(b=>b.stage==='published').length;
-  const overdue = builds.filter(b=>isOverdue(b.due, b.stage)).length;
+  const overdueMilestones = collectUpcomingMilestones().filter(m => milestoneBucket(m.days) === 'red').length;
   document.getElementById('stats').innerHTML = `
     <div class="stat-card">
       <span class="label">Total builds</span>
@@ -814,9 +814,9 @@ function renderStats(){
       <span class="sub">live builds</span>
     </div>
     <div class="stat-card">
-      <span class="label">Overdue</span>
-      <div class="value ${overdue>0?'red':''}">${overdue}</div>
-      <span class="sub">past due date</span>
+      <span class="label">Milestones Overdue</span>
+      <div class="value ${overdueMilestones>0?'red':''}">${overdueMilestones}</div>
+      <span class="sub">past milestone date</span>
     </div>
   `;
 }
