@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Short Form Learning — Build Tracker</title>
+<title>Short Form Learning: Build Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -359,7 +359,7 @@
 <div class="wrap">
   <div class="page-title">
     <h1>Build pipeline overview</h1>
-    <p>Every lesson, video, and guide in progress — stage, owner, and timing at a glance. This board is shared, so everyone on the team sees the same builds.</p>
+    <p>A live view of every build in the pipeline: who owns it, what stage it's at, and what's due next. Shared across the team, so what you see here is what everyone sees.</p>
   </div>
 
   <div class="panel filter-panel">
@@ -660,7 +660,7 @@ async function loadBuilds(){
     markSynced();
   }catch(e){
     console.error('Could not load builds:', e);
-    document.getElementById('updatedAt').textContent = 'Could not connect — check firebase-config.js';
+    document.getElementById('updatedAt').textContent = 'Could not connect. Check firebase-config.js';
   }
   render();
 }
@@ -753,7 +753,7 @@ function populateFilterPills(){
 }
 
 // Toggling a dropdown open/closed is a pure UI-state change, not a filter
-// change — redraw just the dropdowns rather than the whole board.
+// change; redraw just the dropdowns rather than the whole board.
 document.getElementById('formatFilterTrigger').addEventListener('click', () => {
   formatFilterOpen = !formatFilterOpen;
   ownerFilterOpen = false;
@@ -1157,7 +1157,7 @@ async function toggleMilestoneDone(newDone){
     markSynced();
   }catch(err){
     console.error('Could not update milestone:', err);
-    document.getElementById('updatedAt').textContent = 'Could not save — try again';
+    document.getElementById('updatedAt').textContent = 'Could not save. Try again.';
   }
 }
 document.getElementById('mpDoneCheck').addEventListener('change', (e) => {
@@ -1237,7 +1237,7 @@ async function openActivityLog(){
     list.innerHTML = entries.map(e => {
       const verb = ACTION_VERBS[e.action] || e.action;
       const title = e.buildTitle ? `“${escapeHtml(e.buildTitle)}”` : 'a project';
-      const detail = e.details ? ` — ${escapeHtml(e.details)}` : '';
+      const detail = e.details ? `: ${escapeHtml(e.details)}` : '';
       return `<div class="activity-entry">
         <div class="action"><span class="who">${escapeHtml(e.by)}</span> ${verb} ${title}${detail}</div>
         <div class="when">${relativeTime(e.at)}</div>
@@ -1294,7 +1294,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     render();
   }catch(err){
     console.error('Could not save build:', err);
-    document.getElementById('updatedAt').textContent = 'Could not save — try again';
+    document.getElementById('updatedAt').textContent = 'Could not save. Try again.';
   }
 });
 
@@ -1309,7 +1309,7 @@ document.getElementById('deleteBtn').addEventListener('click', async () => {
     render();
   }catch(err){
     console.error('Could not delete build:', err);
-    document.getElementById('updatedAt').textContent = 'Could not delete — try again';
+    document.getElementById('updatedAt').textContent = 'Could not delete. Try again.';
   }
 });
 
