@@ -82,9 +82,11 @@
       const topbar = document.querySelector('.topbar');
       if (topbar) topbar.appendChild(badge);
     }
-    badge.innerHTML = `You: <b>${escapeHtml(name)}</b> \u00b7 <button class="identity-switch" id="identity-switch-btn">sign out</button>`;
-    const btn = document.getElementById('identity-switch-btn');
-    if (btn) btn.addEventListener('click', () => firebase.auth().signOut());
+    badge.innerHTML = `You: <b>${escapeHtml(name)}</b> \u00b7 <button class="identity-switch" id="identity-changepw-btn">change password</button> \u00b7 <button class="identity-switch" id="identity-switch-btn">sign out</button>`;
+    const signOutBtn = document.getElementById('identity-switch-btn');
+    if (signOutBtn) signOutBtn.addEventListener('click', () => firebase.auth().signOut());
+    const changePwBtn = document.getElementById('identity-changepw-btn');
+    if (changePwBtn) changePwBtn.addEventListener('click', () => showChangePasswordModal());
   }
 
   function showSignInScreen(message, isError) {
@@ -155,6 +157,95 @@
   function hideSignInScreen() {
     const overlay = document.getElementById('identity-overlay');
     if (overlay) overlay.remove();
+  }
+
+  function showChangePasswordModal(message, isError) {
+    injectStyles();
+    let overlay = document.getElementById('identity-changepw-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'identity-changepw-overlay';
+      overlay.className = 'identity-overlay';
+      document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = `
+      <div class="identity-modal">
+        <h2>Change password</h2>
+        <p>Enter your current password, then choose a new one.</p>
+        <div class="identity-field">
+          <label for="cp-current">Current password</label>
+          <input id="cp-current" type="password" autocomplete="current-password">
+        </div>
+        <div class="identity-field">
+          <label for="cp-new">New password</label>
+          <input id="cp-new" type="password" autocomplete="new-password">
+        </div>
+        <div class="identity-field">
+          <label for="cp-confirm">Confirm new password</label>
+          <input id="cp-confirm" type="password" autocomplete="new-password">
+        </div>
+        <button class="identity-submit" id="cp-submit-btn">Update password</button>
+        <div class="identity-links">
+          <button class="identity-link-btn" id="cp-cancel-btn" type="button">Cancel</button>
+        </div>
+        ${message ? `<div class="${isError ? 'identity-error' : 'identity-notice'}">${escapeHtml(message)}</div>` : ''}
+      </div>
+    `;
+
+    overlay.querySelector('#cp-cancel-btn').addEventListener('click', () => overlay.remove());
+
+    const currentInput = overlay.querySelector('#cp-current');
+    const newInput = overlay.querySelector('#cp-new');
+    const confirmInput = overlay.querySelector('#cp-confirm');
+    const submitBtn = overlay.querySelector('#cp-submit-btn');
+
+    submitBtn.addEventListener('click', () => {
+      const current = currentInput.value;
+      const next = newInput.value;
+      const confirm = confirmInput.value;
+
+      if (!current || !next || !confirm) {
+        showChangePasswordModal('Fill in all three fields.', true);
+        return;
+      }
+      if (next.length < 8) {
+        showChangePasswordModal('New password must be at least 8 characters.', true);
+        return;
+      }
+      if (next !== confirm) {
+        showChangePasswordModal('New passwords don\u2019t match.', true);
+        return;
+      }
+
+      submitBtn.disabled = true;
+      const user = firebase.auth().currentUser;
+      const cred = firebase.auth.EmailAuthProvider.credential(user.email, current);
+
+      user.reauthenticateWithCredential(cred)
+        .then(() => user.updatePassword(next))
+        .then(() => {
+          overlay.innerHTML = `
+            <div class="identity-modal">
+              <h2>Password updated</h2>
+              <p>Your password has been changed. Use it next time you sign in.</p>
+              <button class="identity-submit" id="cp-done-btn">Done</button>
+            </div>
+          `;
+          overlay.querySelector('#cp-done-btn').addEventListener('click', () => overlay.remove());
+        })
+        .catch(err => {
+          console.error('Change password failed:', err);
+          let msg = 'Something went wrong \u2014 try again.';
+          if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+            msg = 'Current password is incorrect.';
+          } else if (err.code === 'auth/weak-password') {
+            msg = 'New password is too weak.';
+          } else if (err.code === 'auth/too-many-requests') {
+            msg = 'Too many attempts \u2014 wait a bit and try again.';
+          }
+          showChangePasswordModal(msg, true);
+        });
+    });
   }
 
   window.Identity = {
