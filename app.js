@@ -21,6 +21,38 @@ let ganttNeedsScrollToToday = true;
 const GANTT_DAY_WIDTH_MIN = 14;
 const GANTT_DAY_WIDTH_MAX = 70;
 const GANTT_DAY_WIDTH_DEFAULT = 34;
+
+// Rough text-width estimate for milestone labels (bold 10.5px Inter). Doesn't
+// need to be pixel-perfect, just close enough to catch real collisions.
+function estimateLabelWidth(text){
+  return Math.ceil((text || '').length * 6.4) + 10;
+}
+
+// Greedy lane assignment so overlapping milestone labels on the same row
+// stack onto separate lines instead of visually colliding. Milestones must
+// already be sorted by mOffset ascending. Returns { lanes: number[], laneCount }
+// where lanes[i] is the vertical lane index assigned to milestones[i].
+function assignMilestoneLanes(milestones){
+  const laneEndX = []; // rightmost occupied x per lane
+  const lanes = [];
+  const GAP = 10;
+  milestones.forEach(m => {
+    const start = m.mOffset + 9;
+    const end = start + estimateLabelWidth(m.label);
+    let assigned = -1;
+    for(let lane = 0; lane < laneEndX.length; lane++){
+      if(start >= laneEndX[lane] + GAP){ assigned = lane; break; }
+    }
+    if(assigned === -1){
+      assigned = laneEndX.length;
+      laneEndX.push(end);
+    } else {
+      laneEndX[assigned] = end;
+    }
+    lanes.push(assigned);
+  });
+  return { lanes, laneCount: Math.max(laneEndX.length, 1) };
+}
 let filterFormats = [];   // empty array = no filter, show all
 let filterOwners = [];    // empty array = no filter, show all
 let filterFormatText = '';
@@ -516,20 +548,47 @@ function renderGantt(){
 
     let milestonesHtml = '';
     const showMilestoneLabels = dayWidth >= GANTT_DAY_WIDTH_DEFAULT;
-    (b.milestones || []).forEach((m, mIdx) => {
-      if(!m.date) return;
-      const md = toDate(m.date);
-      const mOffset = daysBetween(rangeStart, md) * dayWidth;
-      const doneClass = m.done ? 'done' : '';
-      const label = m.label || 'Milestone';
-      milestonesHtml += `<div class="gantt-milestone ${doneClass}" style="left:${mOffset}px;" data-label="${escapeHtml(label)}" data-date="${escapeHtml(m.date)}" data-done="${m.done ? '1' : '0'}" data-project="${escapeHtml(b.title)}" data-build-id="${b.id}" data-index="${mIdx}"></div>`;
+    const LANE_HEIGHT = 22;
+    const BASE_ROW_HEIGHT = 46;
+
+    const msData = (b.milestones || [])
+      .map((m, mIdx) => {
+        if(!m.date) return null;
+        const md = toDate(m.date);
+        return {
+          mOffset: daysBetween(rangeStart, md) * dayWidth,
+          doneClass: m.done ? 'done' : '',
+          label: m.label || 'Milestone',
+          date: m.date,
+          done: !!m.done,
+          mIdx
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b2) => a.mOffset - b2.mOffset);
+
+    let laneCount = 1;
+    let laneOf = () => 0;
+    if(showMilestoneLabels && msData.length > 0){
+      const assignment = assignMilestoneLanes(msData);
+      laneCount = assignment.laneCount;
+      laneOf = (i) => assignment.lanes[i];
+    }
+    const rowHeight = showMilestoneLabels
+      ? BASE_ROW_HEIGHT + Math.max(laneCount - 1, 0) * LANE_HEIGHT
+      : BASE_ROW_HEIGHT;
+
+    msData.forEach((m, i) => {
+      milestonesHtml += `<div class="gantt-milestone ${m.doneClass}" style="left:${m.mOffset}px;" data-label="${escapeHtml(m.label)}" data-date="${escapeHtml(m.date)}" data-done="${m.done ? '1' : '0'}" data-project="${escapeHtml(b.title)}" data-build-id="${b.id}" data-index="${m.mIdx}"></div>`;
       if(showMilestoneLabels){
-        milestonesHtml += `<div class="gantt-milestone-label ${doneClass}" style="left:${mOffset + 9}px;">${escapeHtml(label)}</div>`;
+        const lane = laneOf(i);
+        const top = 12 + lane * LANE_HEIGHT;
+        milestonesHtml += `<div class="gantt-milestone-label ${m.doneClass}" style="left:${m.mOffset + 9}px; top:${top}px;">${escapeHtml(m.label)}</div>`;
       }
     });
 
     rowsHtml += `
-      <div class="gantt-row">
+      <div class="gantt-row" style="height:${rowHeight}px;">
         <div class="gantt-label" data-id="${b.id}" title="${escapeHtml(b.title)}">
           <span class="dot" style="background:${stage.color}"></span>
           <span class="title-text">${escapeHtml(b.title)}</span>

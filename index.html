@@ -42,6 +42,7 @@
     --ms-yellow:#E0C23A;
     --ms-orange:#E28A3A;
     --ms-red:#E2735A;
+    --gantt-label-shadow:0 1px 3px rgba(0,0,0,0.7), 0 0 4px rgba(0,0,0,0.5);
     --font:'Inter', -apple-system, sans-serif;
   }
   html[data-theme="light"]{
@@ -67,6 +68,7 @@
     --ms-yellow:#6B5D1B;
     --ms-orange:#875222;
     --ms-red:#904939;
+    --gantt-label-shadow:0 1px 2px rgba(255,255,255,0.9), 0 0 5px rgba(255,255,255,0.95), 0 0 1px rgba(255,255,255,1);
   }
   *{box-sizing:border-box;}
   body{
@@ -341,7 +343,7 @@
   .gantt-milestone-label{
     position:absolute; top:12px; height:22px; line-height:22px;
     font-size:10.5px; font-weight:700; color:var(--gold); white-space:nowrap;
-    pointer-events:none; z-index:5; text-shadow:0 1px 3px rgba(0,0,0,0.7), 0 0 4px rgba(0,0,0,0.5);
+    pointer-events:none; z-index:5; text-shadow:var(--gantt-label-shadow);
   }
   .gantt-milestone-label.done{ color:var(--teal); }
 
