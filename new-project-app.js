@@ -44,6 +44,16 @@ function addTeamRow(name = '', role = ''){
 document.getElementById('addTeamBtn').addEventListener('click', () => addTeamRow());
 
 // --- Dynamic milestone rows ---
+// Makes a date input open its native picker on any click in the field, not
+// just the small calendar icon. Falls back silently on browsers without
+// showPicker() (e.g. Safari) — the native icon still works there either way.
+function wireDatePicker(input){
+  input.addEventListener('click', () => {
+    try { input.showPicker(); } catch(e){ /* unsupported; icon still works */ }
+  });
+}
+document.querySelectorAll('input[type="date"]').forEach(wireDatePicker);
+
 function addMilestoneRow(label = '', date = '', done = false){
   const list = document.getElementById('milestoneList');
   const row = document.createElement('div');
@@ -63,6 +73,7 @@ function addMilestoneRow(label = '', date = '', done = false){
   row.querySelector('.ms-done').addEventListener('change', e => msBox.classList.toggle('active', e.target.checked));
   if(done) msBox.classList.add('active');
   row.querySelector('.remove-row').addEventListener('click', () => row.remove());
+  wireDatePicker(row.querySelector('.ms-date'));
   list.appendChild(row);
 }
 document.getElementById('addMilestoneBtn').addEventListener('click', () => addMilestoneRow());

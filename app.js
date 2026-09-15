@@ -24,8 +24,17 @@ const GANTT_DAY_WIDTH_DEFAULT = 34;
 
 // Rough text-width estimate for milestone labels (bold 10.5px Inter). Doesn't
 // need to be pixel-perfect, just close enough to catch real collisions.
+// Deliberately generous (overestimates slightly) since underestimating is
+// what causes visible overlaps.
 function estimateLabelWidth(text){
-  return Math.ceil((text || '').length * 6.4) + 10;
+  return Math.ceil((text || '').length * 7.1) + 12;
+}
+
+// Full label stays in data-label (used by the click popover); the on-timeline
+// text is capped so dense rows don't turn into a wall of overlapping text.
+function truncateLabel(text, max = 20){
+  if(!text || text.length <= max) return text;
+  return text.slice(0, max - 1).trimEnd() + '…';
 }
 
 // Greedy lane assignment so overlapping milestone labels on the same row
@@ -35,10 +44,10 @@ function estimateLabelWidth(text){
 function assignMilestoneLanes(milestones){
   const laneEndX = []; // rightmost occupied x per lane
   const lanes = [];
-  const GAP = 10;
+  const GAP = 12;
   milestones.forEach(m => {
     const start = m.mOffset + 9;
-    const end = start + estimateLabelWidth(m.label);
+    const end = start + estimateLabelWidth(truncateLabel(m.label));
     let assigned = -1;
     for(let lane = 0; lane < laneEndX.length; lane++){
       if(start >= laneEndX[lane] + GAP){ assigned = lane; break; }
@@ -583,7 +592,7 @@ function renderGantt(){
       if(showMilestoneLabels){
         const lane = laneOf(i);
         const top = 12 + lane * LANE_HEIGHT;
-        milestonesHtml += `<div class="gantt-milestone-label ${m.doneClass}" style="left:${m.mOffset + 9}px; top:${top}px;">${escapeHtml(m.label)}</div>`;
+        milestonesHtml += `<div class="gantt-milestone-label ${m.doneClass}" style="left:${m.mOffset + 9}px; top:${top}px;" title="${escapeHtml(m.label)}">${escapeHtml(truncateLabel(m.label))}</div>`;
       }
     });
 
