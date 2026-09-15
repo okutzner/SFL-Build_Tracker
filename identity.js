@@ -258,6 +258,9 @@
       window.Identity._onReady = callback;
 
       firebase.auth().onAuthStateChanged(user => {
+        const loader = document.getElementById('pageLoader');
+        if (loader) loader.classList.add('hide');
+
         if (!user) {
           window.Identity.current = null;
           const badge = document.getElementById('identity-badge');
