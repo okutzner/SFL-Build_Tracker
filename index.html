@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Short Form Learning: Build Tracker</title>
+<script>
+  // Applied as early as possible, before first paint, so switching themes
+  // doesn't cause a visible flash of the wrong one on reload.
+  (function(){
+    var saved = localStorage.getItem('sfl-theme');
+    if(saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
@@ -21,6 +29,7 @@
     --text-soft:#9A9A9A;
     --text-faint:#8A8A8A;
     --gold:#E0A73A;
+    --gold-btn:#E0A73A;
     --gold-soft:rgba(224,167,58,0.14);
     --gold-ink:#1A1408;
     --teal:#4FBFA8;
@@ -29,7 +38,35 @@
     --red-soft:rgba(226,115,90,0.14);
     --lavender:#9C8FC9;
     --lavender-soft:rgba(156,143,201,0.14);
+    --ms-green:#4FBFA8;
+    --ms-yellow:#E0C23A;
+    --ms-orange:#E28A3A;
+    --ms-red:#E2735A;
     --font:'Inter', -apple-system, sans-serif;
+  }
+  html[data-theme="light"]{
+    --bg:#F7F6F3;
+    --panel:#FFFFFF;
+    --panel-alt:#F1EFEA;
+    --border:rgba(0,0,0,0.08);
+    --border-strong:rgba(0,0,0,0.16);
+    --text:#1A1A1C;
+    --text-soft:#55565B;
+    --text-faint:#6B6B6F;
+    --gold:#8B5510;
+    --gold-btn:#E0A73A;
+    --gold-soft:rgba(139,85,16,0.12);
+    --gold-ink:#1A1408;
+    --teal:#1F7A69;
+    --teal-soft:rgba(31,122,105,0.12);
+    --red:#B33F29;
+    --red-soft:rgba(179,63,41,0.12);
+    --lavender:#5B4A96;
+    --lavender-soft:rgba(91,74,150,0.12);
+    --ms-green:#2C6A5E;
+    --ms-yellow:#6B5D1B;
+    --ms-orange:#875222;
+    --ms-red:#904939;
   }
   *{box-sizing:border-box;}
   body{
@@ -39,16 +76,24 @@
     font-family:var(--font);
     min-height:100vh;
     -webkit-font-smoothing:antialiased;
+    transition:background-color .15s ease, color .15s ease;
   }
   a{color:inherit;}
+
+  .theme-toggle{
+    background:var(--panel-alt); border:1px solid var(--border-strong); color:var(--text-soft);
+    border-radius:20px; width:38px; height:38px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:15px; margin-left:auto; flex:none;
+  }
+  .theme-toggle:hover{ border-color:var(--gold); color:var(--gold); }
 
   .topbar{
     display:flex; align-items:center; gap:12px;
     padding:16px 28px; border-bottom:1px solid var(--border);
     background:var(--bg);
   }
-  .header-divider{ width:1px; height:22px; background:#454545; flex:none; }
-  .header-title{ font-size:13px; color:#d8d8d8; letter-spacing:0.02em; }
+  .header-divider{ width:1px; height:22px; background:var(--border-strong); flex:none; }
+  .header-title{ font-size:13px; color:var(--text-soft); letter-spacing:0.02em; }
 
   .wrap{ max-width:1240px; margin:0 auto; padding:28px 28px 60px; }
 
@@ -127,7 +172,7 @@
     margin-top:18px; padding-top:16px; border-top:1px solid var(--border);
   }
   .btn-primary{
-    background:var(--gold); color:var(--gold-ink); border:none; border-radius:8px;
+    background:var(--gold-btn); color:var(--gold-ink); border:none; border-radius:8px;
     padding:11px 18px; font-family:var(--font); font-weight:700; font-size:13.5px;
     cursor:pointer;
   }
@@ -196,10 +241,10 @@
     flex:none; font-size:12px; font-weight:700; border-radius:20px; padding:5px 12px;
     white-space:nowrap;
   }
-  .milestone-badge-green{ color:#4FBFA8; background:rgba(79,191,168,0.14); border:1px solid rgba(79,191,168,0.4); }
-  .milestone-badge-yellow{ color:#E0C23A; background:rgba(224,194,58,0.14); border:1px solid rgba(224,194,58,0.4); }
-  .milestone-badge-orange{ color:#E28A3A; background:rgba(226,138,58,0.14); border:1px solid rgba(226,138,58,0.4); }
-  .milestone-badge-red{ color:#E2735A; background:rgba(226,115,90,0.14); border:1px solid rgba(226,115,90,0.4); }
+  .milestone-badge-green{ color:var(--ms-green); background:rgba(79,191,168,0.14); border:1px solid rgba(79,191,168,0.4); }
+  .milestone-badge-yellow{ color:var(--ms-yellow); background:rgba(224,194,58,0.14); border:1px solid rgba(224,194,58,0.4); }
+  .milestone-badge-orange{ color:var(--ms-orange); background:rgba(226,138,58,0.14); border:1px solid rgba(226,138,58,0.4); }
+  .milestone-badge-red{ color:var(--ms-red); background:rgba(226,115,90,0.14); border:1px solid rgba(226,115,90,0.4); }
 
   .board{
     display:grid; grid-template-columns:repeat(4, minmax(230px, 1fr)); gap:16px;
@@ -289,7 +334,7 @@
   .gantt-empty{ padding:30px; text-align:center; color:var(--text-faint); font-size:13px; }
   .gantt-milestone{
     position:absolute; top:17px; width:12px; height:12px; margin-left:-6px;
-    background:var(--gold); border:2px solid var(--panel-alt); transform:rotate(45deg);
+    background:var(--gold-btn); border:2px solid var(--panel-alt); transform:rotate(45deg);
     z-index:4; cursor:default; box-shadow:0 0 0 1px rgba(255,255,255,0.15);
   }
   .gantt-milestone.done{ background:var(--teal); }
@@ -337,7 +382,7 @@
   .field textarea{ resize:vertical; min-height:60px; }
   .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .modal-actions{ display:flex; justify-content:space-between; align-items:center; margin-top:16px; }
-  .btn-secondary{ background:var(--gold); color:var(--gold-ink); border:none; border-radius:7px; padding:9px 16px; font-weight:700; font-size:13.5px; cursor:pointer; }
+  .btn-secondary{ background:var(--gold-btn); color:var(--gold-ink); border:none; border-radius:7px; padding:9px 16px; font-weight:700; font-size:13.5px; cursor:pointer; }
   .btn-ghost{ background:none; border:1px solid var(--border-strong); color:var(--text-soft); border-radius:7px; font-size:13px; cursor:pointer; padding:8px 14px; }
   .btn-delete{ color:var(--red); background:none; border:none; font-size:13px; cursor:pointer; }
   .note-shared{ font-size:12px; color:var(--text-faint); margin:-8px 0 18px; }
@@ -381,13 +426,29 @@
 <div class="topbar">
   <img src="https://okutzner.github.io/SFL-Assessment/curtin.png" alt="Curtin University" style="height:32px;width:auto" onerror="this.style.display='none';document.getElementById('logo-fb').style.display='flex'">
   <div id="logo-fb" style="display:none;align-items:center;gap:0">
-    <span style="font-size:20px;font-weight:800;color:#f0f0f0;letter-spacing:-.5px">CURTIN</span>
-    <span style="display:inline-block;width:2px;height:20px;background:#cfa050;margin:0 6px;vertical-align:middle;border-radius:1px"></span>
-    <span style="font-size:10px;font-weight:600;color:#cfa050;letter-spacing:.15em;text-transform:uppercase">SHORT FORM LEARNING</span>
+    <span style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.5px">CURTIN</span>
+    <span style="display:inline-block;width:2px;height:20px;background:var(--gold);margin:0 6px;vertical-align:middle;border-radius:1px"></span>
+    <span style="font-size:10px;font-weight:600;color:var(--gold);letter-spacing:.15em;text-transform:uppercase">SHORT FORM LEARNING</span>
   </div>
   <div class="header-divider"></div>
   <span class="header-title">Build Tracker</span>
+  <button type="button" class="theme-toggle" id="themeToggleBtn" title="Switch theme" aria-label="Switch between light and dark theme">🌙</button>
 </div>
+<script>
+  (function(){
+    const btn = document.getElementById('themeToggleBtn');
+    function isLight(){ return document.documentElement.getAttribute('data-theme') === 'light'; }
+    function updateIcon(){ btn.textContent = isLight() ? '☀️' : '🌙'; }
+    updateIcon();
+    btn.addEventListener('click', () => {
+      const next = isLight() ? null : 'light';
+      if(next) document.documentElement.setAttribute('data-theme', next);
+      else document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('sfl-theme', next || 'dark');
+      updateIcon();
+    });
+  })();
+</script>
 
 <div class="wrap">
   <div class="page-title">
