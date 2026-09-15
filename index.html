@@ -69,6 +69,9 @@
   }
   .filter-group{ margin-bottom:16px; }
   .filter-group:last-of-type{ margin-bottom:0; }
+  .filter-row{ display:flex; align-items:flex-start; gap:28px; flex-wrap:wrap; }
+  .filter-row .filter-group{ margin-bottom:0; }
+  .filter-actions{ margin-left:auto; display:flex; gap:10px; align-items:center; padding-top:24px; }
   .pillrow{ display:flex; gap:8px; flex-wrap:wrap; }
   .filter-other-input{
     width:100%; max-width:280px; margin-top:10px; padding:8px 11px; border:1px solid var(--border-strong);
@@ -393,31 +396,33 @@
   </div>
 
   <div class="panel filter-panel">
-    <div class="filter-group">
-      <span class="group-label">Format</span>
-      <div class="dropdown-checklist" id="formatFilterDropdown">
-        <button type="button" class="dropdown-trigger" id="formatFilterTrigger" aria-haspopup="listbox" aria-expanded="false">
-          <span id="formatFilterTriggerLabel">All formats</span><span class="chevron">▾</span>
-        </button>
-        <div class="dropdown-panel" id="formatFilterPanel" role="listbox" aria-multiselectable="true" style="display:none;"></div>
+    <div class="filter-row">
+      <div class="filter-group">
+        <span class="group-label">Owner</span>
+        <div class="dropdown-checklist" id="ownerFilterDropdown">
+          <button type="button" class="dropdown-trigger" id="ownerFilterTrigger" aria-haspopup="listbox" aria-expanded="false">
+            <span id="ownerFilterTriggerLabel">All owners</span><span class="chevron">▾</span>
+          </button>
+          <div class="dropdown-panel" id="ownerFilterPanel" role="listbox" aria-multiselectable="true" style="display:none;"></div>
+        </div>
+        <input type="text" id="ownerOtherFilterInput" class="filter-other-input" placeholder="Filter by name…" style="display:none;">
       </div>
-      <input type="text" id="formatOtherFilterInput" class="filter-other-input" placeholder="Filter by custom format…" style="display:none;">
-    </div>
-    <div class="filter-group">
-      <span class="group-label">Owner</span>
-      <div class="dropdown-checklist" id="ownerFilterDropdown">
-        <button type="button" class="dropdown-trigger" id="ownerFilterTrigger" aria-haspopup="listbox" aria-expanded="false">
-          <span id="ownerFilterTriggerLabel">All owners</span><span class="chevron">▾</span>
-        </button>
-        <div class="dropdown-panel" id="ownerFilterPanel" role="listbox" aria-multiselectable="true" style="display:none;"></div>
+      <div class="filter-group">
+        <span class="group-label">Format</span>
+        <div class="dropdown-checklist" id="formatFilterDropdown">
+          <button type="button" class="dropdown-trigger" id="formatFilterTrigger" aria-haspopup="listbox" aria-expanded="false">
+            <span id="formatFilterTriggerLabel">All formats</span><span class="chevron">▾</span>
+          </button>
+          <div class="dropdown-panel" id="formatFilterPanel" role="listbox" aria-multiselectable="true" style="display:none;"></div>
+        </div>
+        <input type="text" id="formatOtherFilterInput" class="filter-other-input" placeholder="Filter by custom format…" style="display:none;">
       </div>
-      <input type="text" id="ownerOtherFilterInput" class="filter-other-input" placeholder="Filter by name…" style="display:none;">
-    </div>
-    <div class="panel-footer">
-      <div style="display:flex; gap:10px; align-items:center;">
+      <div class="filter-actions">
         <a class="btn-primary" id="openAdd" href="new-project.html">+ New project</a>
         <button class="btn-ghost" id="openActivity" type="button">Activity log</button>
       </div>
+    </div>
+    <div class="panel-footer">
       <span class="updated" id="updatedAt"></span>
     </div>
   </div>
