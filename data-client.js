@@ -14,6 +14,17 @@
   }
 
   firebase.initializeApp(window.FIREBASE_CONFIG);
+
+  // Explicit persistence, set immediately after init. Left implicit, the SDK
+  // probes multiple persistence mechanisms on first load, which on Safari
+  // (this app is on GitHub Pages, not Firebase Hosting, so auth state checks
+  // go through a hidden iframe on *.firebaseapp.com) can get caught up in
+  // Intelligent Tracking Prevention's handling of cross-site iframe storage
+  // access and stall for a long time. Setting it explicitly and immediately
+  // skips that probing step. Fire-and-forget: nothing else needs to wait on it.
+  firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+    .catch(err => console.error('Could not set auth persistence:', err));
+
   const db = firebase.firestore();
   const col = db.collection('builds');
   const activityCol = db.collection('activity');
