@@ -32,6 +32,12 @@ function estimateLabelWidth(text){
 
 // Full label stays in data-label (used by the click popover); the on-timeline
 // text is capped so dense rows don't turn into a wall of overlapping text.
+// Firestore imposes no schema, so a malformed document (written directly via
+// the API, or by a future bug) could have milestones/team set to something
+// other than an array. Guard every use so one bad document degrades
+// gracefully instead of throwing and breaking the board for everyone.
+function asArray(x){ return Array.isArray(x) ? x : []; }
+
 function truncateLabel(text, max = 20){
   if(!text || text.length <= max) return text;
   return text.slice(0, max - 1).trimEnd() + '…';
@@ -122,7 +128,7 @@ function milestoneDayLabel(days){
 function collectUpcomingMilestones(){
   const list = [];
   builds.forEach(b => {
-    (b.milestones || []).forEach((m, mIdx) => {
+    asArray(b.milestones).forEach((m, mIdx) => {
       if(m.done || !m.date) return;
       list.push({
         buildId: b.id,
@@ -433,9 +439,12 @@ function renderCard(b){
   const card = document.createElement('div');
   card.className = 'card';
   card.draggable = true;
+  card.tabIndex = 0;
+  card.setAttribute('role', 'button');
   const fmt = FORMATS[b.format] || FORMATS.other;
   const fmtLabel = (b.format === 'other' && b.formatOther) ? b.formatOther : fmt.label;
   const overdue = isOverdue(b.due, b.stage);
+  card.setAttribute('aria-label', `${b.title}, ${fmtLabel}, ${overdue ? 'overdue, ' : ''}due ${fmtDate(b.due)}, owner ${b.owner || 'unassigned'}. Press Enter to open.`);
   card.innerHTML = `
     <h3>${escapeHtml(b.title)}</h3>
     <div class="meta-row">
@@ -450,6 +459,12 @@ function renderCard(b){
   card.addEventListener('dragstart', () => { draggingId = b.id; card.classList.add('dragging'); });
   card.addEventListener('dragend', () => { draggingId = null; card.classList.remove('dragging'); });
   card.addEventListener('click', () => openEdit(b.id));
+  card.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      openEdit(b.id);
+    }
+  });
   return card;
 }
 
@@ -486,7 +501,7 @@ function renderGantt(){
 
   const starts = items.map(b => toDate(b.start || (b.createdAt ? b.createdAt.slice(0,10) : null) || b.due));
   const dues = items.map(b => toDate(b.due));
-  const milestoneDates = items.flatMap(b => (b.milestones || []).filter(m => m.date).map(m => toDate(m.date)));
+  const milestoneDates = items.flatMap(b => asArray(b.milestones).filter(m => m.date).map(m => toDate(m.date)));
   const today = todayMidnight;
   let rangeStart = new Date(Math.min(...starts, ...dues, ...milestoneDates, +addDays(today, -7)));
   let rangeEnd = new Date(Math.max(...starts, ...dues, ...milestoneDates, +addDays(today, 60)));
@@ -561,7 +576,7 @@ function renderGantt(){
     const LANE_HEIGHT = 22;
     const BASE_ROW_HEIGHT = 46;
 
-    const msData = (b.milestones || [])
+    const msData = asArray(b.milestones)
       .map((m, mIdx) => {
         if(!m.date) return null;
         const md = toDate(m.date);
@@ -686,7 +701,7 @@ async function toggleMilestoneDone(newDone){
   if(!currentMilestoneRef) return;
   const { buildId, mIndex, marker } = currentMilestoneRef;
   const b = builds.find(x => x.id === buildId);
-  if(!b || !b.milestones || !b.milestones[mIndex]) return;
+  if(!b || !Array.isArray(b.milestones) || !b.milestones[mIndex]) return;
 
   const updatedMilestones = b.milestones.map((m, i) => i === mIndex ? { ...m, done: newDone } : m);
   b.milestones = updatedMilestones;

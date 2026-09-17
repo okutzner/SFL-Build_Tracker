@@ -1,23 +1,65 @@
 // Paste this into: Firebase Console -> Firestore Database -> Rules tab -> Publish.
+// This is not deployed automatically from the repo -- it must be manually
+// kept in sync with whatever is actually live in the console.
 //
-// This opens the `builds` collection up for anyone with your Firebase
-// config (which is public in the page source, by design -- see the note
-// in firebase-config.js) to read and write. There's no login system in
-// this tracker, so this is the rule set that makes it work as an open
-// team board.
+// Access control: only signed-in @curtin.edu.au accounts (created manually
+// by an admin in Authentication -> Users; there is no public sign-up) can
+// read or write anything. This is a stopgap ahead of real Microsoft/Entra
+// SSO -- see the project's technical documentation, Section 4.
 //
-// Do not use this rule set for anything more sensitive than "internal
-// team board on an unlisted URL." If you outgrow that, add Firebase
-// Authentication and tighten these rules to check request.auth.
+// Schema validation: Firestore itself is schemaless, so nothing stops a
+// malformed write (from a bug, or a script hitting the API directly with
+// the app's public config) from silently corrupting a document in a way
+// that breaks rendering for every user. The functions below check the
+// *type* of each field when present, without requiring fields to exist --
+// some legitimate older documents predate certain fields, and rejecting
+// those outright would lock the team out of editing their own real data.
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isCurtinUser() {
+      return request.auth != null
+        && request.auth.token.email.matches('.*@curtin[.]edu[.]au$');
+    }
+
+    function isValidBuild(data) {
+      return (!('title' in data)         || data.title is string)
+        && (!('format' in data)          || data.format is string)
+        && (!('formatOther' in data)     || data.formatOther is string)
+        && (!('stage' in data)           || data.stage is string)
+        && (!('owner' in data)           || data.owner is string)
+        && (!('start' in data)           || data.start is string)
+        && (!('due' in data)             || data.due is string)
+        && (!('priority' in data)        || data.priority is string)
+        && (!('notes' in data)           || data.notes is string)
+        && (!('links' in data)           || data.links is string)
+        && (!('buildApproach' in data)   || data.buildApproach is string)
+        && (!('creditStatus' in data)    || data.creditStatus is string)
+        && (!('isVideoProject' in data)  || data.isVideoProject is bool)
+        && (!('team' in data)            || data.team is list)
+        && (!('milestones' in data)      || data.milestones is list)
+        && (!('contact' in data)         || data.contact is map);
+    }
+
+    function isValidActivity(data) {
+      return (!('buildId' in data)    || data.buildId is string)
+        && (!('buildTitle' in data)   || data.buildTitle is string)
+        && (!('action' in data)      || data.action is string)
+        && (!('details' in data)     || data.details is string)
+        && (!('by' in data)          || data.by is string);
+    }
+
     match /builds/{buildId} {
-      allow read, write: if true;
+      allow read: if isCurtinUser();
+      allow create, update: if isCurtinUser() && isValidBuild(request.resource.data);
+      allow delete: if isCurtinUser();
     }
     match /activity/{entryId} {
-      allow read, write: if true;
+      allow read: if isCurtinUser();
+      allow create, update: if isCurtinUser() && isValidActivity(request.resource.data);
+      allow delete: if isCurtinUser();
     }
   }
 }

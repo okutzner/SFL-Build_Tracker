@@ -34,8 +34,8 @@ function addTeamRow(name = '', role = ''){
   const row = document.createElement('div');
   row.className = 'dyn-row';
   row.innerHTML = `
-    <div class="field"><input type="text" class="team-name" placeholder="Name" value="${escapeAttr(name)}"></div>
-    <div class="field"><input type="text" class="team-role" placeholder="Role (e.g. Instructional designer)" value="${escapeAttr(role)}"></div>
+    <div class="field"><input type="text" class="team-name" placeholder="Name" value="${escapeHtml(name)}"></div>
+    <div class="field"><input type="text" class="team-role" placeholder="Role (e.g. Instructional designer)" value="${escapeHtml(role)}"></div>
     <button type="button" class="remove-row">×</button>
   `;
   row.querySelector('.remove-row').addEventListener('click', () => row.remove());
@@ -60,8 +60,8 @@ function addMilestoneRow(label = '', date = '', done = false, notes = ''){
   row.className = 'milestone-entry';
   row.innerHTML = `
     <div class="dyn-row">
-      <div class="field"><input type="text" class="ms-label" placeholder="Milestone (e.g. Script approved)" value="${escapeAttr(label)}"></div>
-      <div class="field"><input type="date" class="ms-date" value="${escapeAttr(date)}"></div>
+      <div class="field"><input type="text" class="ms-label" placeholder="Milestone (e.g. Script approved)" value="${escapeHtml(label)}"></div>
+      <div class="field"><input type="date" class="ms-date" value="${escapeHtml(date)}"></div>
       <div class="field-check">
         <label class="check-pill" style="padding:9px 10px;">
           <input type="checkbox" class="ms-done" ${done ? 'checked' : ''}>
@@ -83,8 +83,11 @@ function addMilestoneRow(label = '', date = '', done = false, notes = ''){
 }
 document.getElementById('addMilestoneBtn').addEventListener('click', () => addMilestoneRow());
 
-function escapeAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// See app.js for why this guard exists: Firestore enforces no schema, so a
+// malformed document could have team/milestones set to something other
+// than an array.
+function asArray(x){ return Array.isArray(x) ? x : []; }
 
 function setChecked(container, selector, values){
   container.querySelectorAll(selector).forEach(inp => {
@@ -153,7 +156,7 @@ async function loadForEdit(id){
     document.getElementById('fOwnerOther').value = b.owner;
   }
 
-  (b.team || []).forEach(t => addTeamRow(t.name, t.role));
+  asArray(b.team).forEach(t => addTeamRow(t.name, t.role));
 
   if(b.stakeholderType) setRadio('stakeholder', b.stakeholderType);
   const c = b.contact || {};
@@ -164,7 +167,7 @@ async function loadForEdit(id){
 
   document.getElementById('fStart').value = b.start || '';
   document.getElementById('fDue').value = b.due || '';
-  (b.milestones || []).forEach(m => addMilestoneRow(m.label, m.date, m.done, m.notes));
+  asArray(b.milestones).forEach(m => addMilestoneRow(m.label, m.date, m.done, m.notes));
 
   document.getElementById('fTags').value = (b.tags || []).join(', ');
   document.getElementById('fLinks').value = b.links || '';
