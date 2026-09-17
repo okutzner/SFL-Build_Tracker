@@ -238,6 +238,7 @@
   .milestone-row:focus-visible{ outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(224,167,58,0.28); }
   .milestone-row-main{ display:flex; flex-direction:column; gap:2px; min-width:0; }
   .milestone-row-label{ font-size:13.5px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .milestone-note-dot{ font-size:11px; opacity:0.75; cursor:help; }
   .milestone-row-project{ font-size:12px; color:var(--text-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .milestone-badge{
     flex:none; font-size:12px; font-weight:700; border-radius:20px; padding:5px 12px;
@@ -362,6 +363,10 @@
   }
   .milestone-popover-label:hover{ color:var(--gold); text-decoration:underline; }
   .milestone-popover-date{ font-size:12px; color:var(--text-soft); margin-bottom:10px; }
+  .milestone-popover-notes{
+    font-size:12.5px; color:var(--text-soft); line-height:1.45; margin-bottom:12px;
+    padding:9px 10px; background:var(--panel-alt); border-radius:7px; white-space:pre-wrap; word-break:break-word;
+  }
   .milestone-popover-check{
     display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text);
     cursor:pointer; margin-bottom:10px; user-select:none;
@@ -523,6 +528,7 @@
       <button class="milestone-popover-close" id="milestonePopoverClose">×</button>
       <a href="#" class="milestone-popover-label" id="mpLabel"></a>
       <div class="milestone-popover-date" id="mpDate"></div>
+      <div class="milestone-popover-notes" id="mpNotes" style="display:none;"></div>
       <label class="milestone-popover-check">
         <input type="checkbox" id="mpDoneCheck">
         <span>Mark as done</span>

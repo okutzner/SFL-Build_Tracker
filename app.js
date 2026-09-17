@@ -128,6 +128,7 @@ function collectUpcomingMilestones(){
         buildId: b.id,
         buildTitle: b.title,
         label: m.label || `Milestone ${mIdx+1}`,
+        notes: m.notes || '',
         days: daysUntil(m.date)
       });
     });
@@ -146,7 +147,7 @@ function renderMilestonesPanel(){
   wrap.innerHTML = items.map(it => `
     <div class="milestone-row" data-build-id="${it.buildId}" tabindex="0" role="button" aria-label="${escapeHtml(it.label)}, ${escapeHtml(it.buildTitle)}, ${milestoneDayLabel(it.days)}">
       <div class="milestone-row-main">
-        <span class="milestone-row-label">${escapeHtml(it.label)}</span>
+        <span class="milestone-row-label">${escapeHtml(it.label)}${it.notes ? ` <span class="milestone-note-dot" title="${escapeHtml(it.notes)}">📝</span>` : ''}</span>
         <span class="milestone-row-project">${escapeHtml(it.buildTitle)}</span>
       </div>
       <span class="milestone-badge milestone-badge-${milestoneBucket(it.days)}">${milestoneDayLabel(it.days)}</span>
@@ -568,6 +569,7 @@ function renderGantt(){
           mOffset: daysBetween(rangeStart, md) * dayWidth,
           doneClass: m.done ? 'done' : '',
           label: m.label || 'Milestone',
+          notes: m.notes || '',
           date: m.date,
           done: !!m.done,
           mIdx
@@ -588,7 +590,7 @@ function renderGantt(){
       : BASE_ROW_HEIGHT;
 
     msData.forEach((m, i) => {
-      milestonesHtml += `<div class="gantt-milestone ${m.doneClass}" style="left:${m.mOffset}px;" data-label="${escapeHtml(m.label)}" data-date="${escapeHtml(m.date)}" data-done="${m.done ? '1' : '0'}" data-project="${escapeHtml(b.title)}" data-build-id="${b.id}" data-index="${m.mIdx}"></div>`;
+      milestonesHtml += `<div class="gantt-milestone ${m.doneClass}" style="left:${m.mOffset}px;" data-label="${escapeHtml(m.label)}" data-notes="${escapeHtml(m.notes)}" data-date="${escapeHtml(m.date)}" data-done="${m.done ? '1' : '0'}" data-project="${escapeHtml(b.title)}" data-build-id="${b.id}" data-index="${m.mIdx}"></div>`;
       if(showMilestoneLabels){
         const lane = laneOf(i);
         const top = 12 + lane * LANE_HEIGHT;
@@ -658,6 +660,14 @@ function showMilestonePopover(marker, evt){
   };
 
   document.getElementById('mpDate').textContent = fmtDate(marker.dataset.date);
+  const notesEl = document.getElementById('mpNotes');
+  const notes = marker.dataset.notes || '';
+  if(notes){
+    notesEl.textContent = notes;
+    notesEl.style.display = 'block';
+  } else {
+    notesEl.style.display = 'none';
+  }
   document.getElementById('mpDoneCheck').checked = done;
   document.getElementById('mpProject').textContent = 'Part of: ' + (marker.dataset.project || '');
 

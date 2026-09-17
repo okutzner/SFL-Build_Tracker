@@ -54,20 +54,25 @@ function wireDatePicker(input){
 }
 document.querySelectorAll('input[type="date"]').forEach(wireDatePicker);
 
-function addMilestoneRow(label = '', date = '', done = false){
+function addMilestoneRow(label = '', date = '', done = false, notes = ''){
   const list = document.getElementById('milestoneList');
   const row = document.createElement('div');
-  row.className = 'dyn-row';
+  row.className = 'milestone-entry';
   row.innerHTML = `
-    <div class="field"><input type="text" class="ms-label" placeholder="Milestone (e.g. Script approved)" value="${escapeAttr(label)}"></div>
-    <div class="field"><input type="date" class="ms-date" value="${escapeAttr(date)}"></div>
-    <div class="field-check">
-      <label class="check-pill" style="padding:9px 10px;">
-        <input type="checkbox" class="ms-done" ${done ? 'checked' : ''}>
-        <span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg></span>Done
-      </label>
+    <div class="dyn-row">
+      <div class="field"><input type="text" class="ms-label" placeholder="Milestone (e.g. Script approved)" value="${escapeAttr(label)}"></div>
+      <div class="field"><input type="date" class="ms-date" value="${escapeAttr(date)}"></div>
+      <div class="field-check">
+        <label class="check-pill" style="padding:9px 10px;">
+          <input type="checkbox" class="ms-done" ${done ? 'checked' : ''}>
+          <span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"/></svg></span>Done
+        </label>
+      </div>
+      <button type="button" class="remove-row">×</button>
     </div>
-    <button type="button" class="remove-row">×</button>
+    <div class="field ms-notes-field">
+      <textarea class="ms-notes" placeholder="Notes for this milestone (optional)" rows="2">${escapeHtml(notes)}</textarea>
+    </div>
   `;
   const msBox = row.querySelector('.check-pill');
   row.querySelector('.ms-done').addEventListener('change', e => msBox.classList.toggle('active', e.target.checked));
@@ -79,6 +84,7 @@ function addMilestoneRow(label = '', date = '', done = false){
 document.getElementById('addMilestoneBtn').addEventListener('click', () => addMilestoneRow());
 
 function escapeAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function setChecked(container, selector, values){
   container.querySelectorAll(selector).forEach(inp => {
@@ -158,7 +164,7 @@ async function loadForEdit(id){
 
   document.getElementById('fStart').value = b.start || '';
   document.getElementById('fDue').value = b.due || '';
-  (b.milestones || []).forEach(m => addMilestoneRow(m.label, m.date, m.done));
+  (b.milestones || []).forEach(m => addMilestoneRow(m.label, m.date, m.done, m.notes));
 
   document.getElementById('fTags').value = (b.tags || []).join(', ');
   document.getElementById('fLinks').value = b.links || '';
@@ -193,6 +199,7 @@ document.getElementById('projectForm').addEventListener('submit', async (e) => {
   const milestones = [...document.querySelectorAll('#milestoneList .dyn-row')].map(row => ({
     label: row.querySelector('.ms-label').value.trim(),
     date: row.querySelector('.ms-date').value,
+    notes: row.querySelector('.ms-notes').value.trim(),
     done: row.querySelector('.ms-done').checked
   })).filter(m => m.label || m.date);
 
