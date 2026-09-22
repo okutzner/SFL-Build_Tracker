@@ -199,7 +199,7 @@ document.getElementById('projectForm').addEventListener('submit', async (e) => {
     role: row.querySelector('.team-role').value.trim()
   })).filter(t => t.name || t.role);
 
-  const milestones = [...document.querySelectorAll('#milestoneList .dyn-row')].map(row => ({
+  const milestones = [...document.querySelectorAll('#milestoneList .milestone-entry')].map(row => ({
     label: row.querySelector('.ms-label').value.trim(),
     date: row.querySelector('.ms-date').value,
     notes: row.querySelector('.ms-notes').value.trim(),
