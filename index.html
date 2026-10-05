@@ -43,6 +43,7 @@
     --ms-orange:#E28A3A;
     --ms-red:#E2735A;
     --gantt-label-shadow:0 1px 3px rgba(0,0,0,0.7), 0 0 4px rgba(0,0,0,0.5);
+    --weekend-bg:rgba(255,255,255,0.085);
     --font:'Inter', -apple-system, sans-serif;
   }
   html[data-theme="light"]{
@@ -69,6 +70,7 @@
     --ms-orange:#875222;
     --ms-red:#904939;
     --gantt-label-shadow:0 1px 2px rgba(255,255,255,0.9), 0 0 5px rgba(255,255,255,0.95), 0 0 1px rgba(255,255,255,1);
+    --weekend-bg:rgba(0,0,0,0.075);
   }
   *{box-sizing:border-box;}
   body{
@@ -304,7 +306,7 @@
     flex:none; font-size:11px; color:var(--text-faint); border-left:1px solid var(--border);
     padding:4px 0 0 6px; box-sizing:border-box; white-space:nowrap; text-align:left;
   }
-  .axis-days .unit.weekend{ color:var(--text-soft); background:rgba(255,255,255,0.045); }
+  .axis-days .unit.weekend{ color:var(--text-soft); background:var(--weekend-bg); }
   .axis-days .unit.is-today{ color:var(--red); font-weight:700; }
   .gantt-row{ display:flex; align-items:center; height:46px; border-bottom:1px solid var(--border); }
   .gantt-section-divider{
@@ -326,7 +328,7 @@
   .gantt-track{ position:relative; flex:1 1 auto; height:100%; }
   .gantt-track .gridline{ position:absolute; top:0; bottom:0; width:1px; background:var(--border); z-index:1; }
   .gantt-track .today-line{ position:absolute; top:0; bottom:0; width:2px; background:var(--red); z-index:3; }
-  .gantt-track .weekend-band{ position:absolute; top:0; bottom:0; background:rgba(255,255,255,0.045); z-index:0; }
+  .gantt-track .weekend-band{ position:absolute; top:0; bottom:0; background:var(--weekend-bg); z-index:0; }
   .gantt-bar{
     position:absolute; top:9px; height:28px; border-radius:6px; min-width:14px;
     font-size:11.5px; color:var(--text); font-weight:700; white-space:nowrap;
