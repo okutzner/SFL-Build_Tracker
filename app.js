@@ -135,12 +135,25 @@ function collectUpcomingMilestones(){
         buildTitle: b.title,
         label: m.label || `Milestone ${mIdx+1}`,
         notes: m.notes || '',
+        missedReason: m.missedReason || '',
+        missedReasonOther: m.missedReasonOther || '',
         days: daysUntil(m.date)
       });
     });
   });
   list.sort((a,b) => a.days - b.days);
   return list;
+}
+function missedReasonText(reason, other){
+  if(!reason) return '';
+  return (reason === 'Other' && other) ? `Other: ${other}` : reason;
+}
+function missedReasonTagHtml(it){
+  const text = missedReasonText(it.missedReason, it.missedReasonOther);
+  if(text){
+    return `<span class="milestone-reason-tag" title="Reason missed: ${escapeHtml(text)}">${escapeHtml(truncateLabel(text, 32))}</span>`;
+  }
+  return it.days < 0 ? `<span class="milestone-reason-none">No reason recorded</span>` : '';
 }
 function renderMilestonesPanel(){
   const wrap = document.getElementById('milestonesList');
@@ -151,10 +164,11 @@ function renderMilestonesPanel(){
     return;
   }
   wrap.innerHTML = items.map(it => `
-    <div class="milestone-row" data-build-id="${it.buildId}" tabindex="0" role="button" aria-label="${escapeHtml(it.label)}, ${escapeHtml(it.buildTitle)}, ${milestoneDayLabel(it.days)}">
+    <div class="milestone-row" data-build-id="${it.buildId}" tabindex="0" role="button" aria-label="${escapeHtml(it.label)}, ${escapeHtml(it.buildTitle)}, ${milestoneDayLabel(it.days)}${it.missedReason ? ', reason: ' + escapeHtml(missedReasonText(it.missedReason, it.missedReasonOther)) : ''}">
       <div class="milestone-row-main">
         <span class="milestone-row-label">${escapeHtml(it.label)}${it.notes ? ` <span class="milestone-note-dot" title="${escapeHtml(it.notes)}">📝</span>` : ''}</span>
         <span class="milestone-row-project">${escapeHtml(it.buildTitle)}</span>
+        ${missedReasonTagHtml(it)}
       </div>
       <span class="milestone-badge milestone-badge-${milestoneBucket(it.days)}">${milestoneDayLabel(it.days)}</span>
     </div>
@@ -585,6 +599,8 @@ function renderGantt(){
           doneClass: m.done ? 'done' : '',
           label: m.label || 'Milestone',
           notes: m.notes || '',
+          missedReason: m.missedReason || '',
+          missedReasonOther: m.missedReasonOther || '',
           date: m.date,
           done: !!m.done,
           mIdx
@@ -605,7 +621,7 @@ function renderGantt(){
       : BASE_ROW_HEIGHT;
 
     msData.forEach((m, i) => {
-      milestonesHtml += `<div class="gantt-milestone ${m.doneClass}" style="left:${m.mOffset}px;" data-label="${escapeHtml(m.label)}" data-notes="${escapeHtml(m.notes)}" data-date="${escapeHtml(m.date)}" data-done="${m.done ? '1' : '0'}" data-project="${escapeHtml(b.title)}" data-build-id="${b.id}" data-index="${m.mIdx}"></div>`;
+      milestonesHtml += `<div class="gantt-milestone ${m.doneClass}" style="left:${m.mOffset}px;" data-label="${escapeHtml(m.label)}" data-notes="${escapeHtml(m.notes)}" data-missed-reason="${escapeHtml(m.missedReason)}" data-missed-other="${escapeHtml(m.missedReasonOther)}" data-date="${escapeHtml(m.date)}" data-done="${m.done ? '1' : '0'}" data-project="${escapeHtml(b.title)}" data-build-id="${b.id}" data-index="${m.mIdx}"></div>`;
       if(showMilestoneLabels){
         const lane = laneOf(i);
         const top = 12 + lane * LANE_HEIGHT;
@@ -683,6 +699,9 @@ function showMilestonePopover(marker, evt){
   } else {
     notesEl.style.display = 'none';
   }
+  document.getElementById('mpMissedReason').value = marker.dataset.missedReason || '';
+  document.getElementById('mpMissedOther').value = marker.dataset.missedOther || '';
+  updatePopoverMissedVisibility();
   document.getElementById('mpDoneCheck').checked = done;
   document.getElementById('mpProject').textContent = 'Part of: ' + (marker.dataset.project || '');
 
@@ -692,10 +711,66 @@ function showMilestonePopover(marker, evt){
   let left = rect.left + rect.width/2 - popWidth/2;
   left = Math.max(12, Math.min(left, window.innerWidth - popWidth - 12));
   let top = rect.bottom + 8;
-  if(top + 160 > window.innerHeight) top = rect.top - 168;
+  if(top + 240 > window.innerHeight) top = Math.max(8, rect.top - 248);
   pop.style.left = left + 'px';
   pop.style.top = top + 'px';
 }
+
+// The reason controls appear once a milestone is missed (date passed, not
+// done) and stay visible if a reason has already been recorded.
+function updatePopoverMissedVisibility(){
+  if(!currentMilestoneRef) return;
+  const marker = currentMilestoneRef.marker;
+  const sel = document.getElementById('mpMissedReason');
+  const done = marker.dataset.done === '1';
+  const missed = !done && !!marker.dataset.date && daysUntil(marker.dataset.date) < 0;
+  document.getElementById('mpMissed').style.display = (missed || sel.value) ? 'block' : 'none';
+  document.getElementById('mpMissedOther').style.display = sel.value === 'Other' ? 'block' : 'none';
+}
+
+async function saveMissedReason(){
+  if(!currentMilestoneRef) return;
+  const { buildId, mIndex, marker } = currentMilestoneRef;
+  const b = builds.find(x => x.id === buildId);
+  if(!b || !Array.isArray(b.milestones) || !b.milestones[mIndex]) return;
+
+  const reason = document.getElementById('mpMissedReason').value;
+  const other = reason === 'Other' ? document.getElementById('mpMissedOther').value.trim() : '';
+  const previous = b.milestones;
+  const prevReason = marker.dataset.missedReason || '';
+  const prevOther = marker.dataset.missedOther || '';
+
+  const updated = previous.map((m, i) => i === mIndex ? { ...m, missedReason: reason, missedReasonOther: other } : m);
+  b.milestones = updated;
+  marker.dataset.missedReason = reason;
+  marker.dataset.missedOther = other;
+  renderMilestonesPanel();
+
+  try{
+    const label = marker.dataset.label || 'Milestone';
+    const text = missedReasonText(reason, other);
+    const detail = reason
+      ? `recorded why "${label}" was missed: ${text}`
+      : `cleared the missed reason for "${label}"`;
+    await window.BuildsAPI.update(buildId, { milestones: updated, title: b.title }, detail);
+    markSynced();
+  }catch(err){
+    console.error('Could not save missed reason:', err);
+    b.milestones = previous;
+    marker.dataset.missedReason = prevReason;
+    marker.dataset.missedOther = prevOther;
+    document.getElementById('mpMissedReason').value = prevReason;
+    document.getElementById('mpMissedOther').value = prevOther;
+    updatePopoverMissedVisibility();
+    renderMilestonesPanel();
+    document.getElementById('updatedAt').textContent = 'Could not save. Try again.';
+  }
+}
+document.getElementById('mpMissedReason').addEventListener('change', () => {
+  updatePopoverMissedVisibility();
+  saveMissedReason();
+});
+document.getElementById('mpMissedOther').addEventListener('change', saveMissedReason);
 
 async function toggleMilestoneDone(newDone){
   if(!currentMilestoneRef) return;
@@ -707,6 +782,7 @@ async function toggleMilestoneDone(newDone){
   b.milestones = updatedMilestones;
   marker.dataset.done = newDone ? '1' : '0';
   marker.classList.toggle('done', newDone);
+  updatePopoverMissedVisibility();
 
   try{
     const label = marker.dataset.label || 'Milestone';
@@ -806,6 +882,70 @@ async function openActivityLog(){
   }
 }
 document.getElementById('openActivity').addEventListener('click', openActivityLog);
+
+// ---- Export of missed milestones (for later analysis) ----
+// A milestone counts as missed if its date has passed and it isn't done, or if
+// a reason has been recorded against it (which keeps late-but-completed
+// milestones with a reason in the data).
+function csvCell(v){
+  let s = (v === null || v === undefined) ? '' : String(v);
+  // Cells starting with these are read as formulas by Excel/Sheets; the
+  // content is user-entered, so neutralise them.
+  if(/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  if(/[",\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+function collectMissedMilestoneRows(){
+  const rows = [];
+  builds.forEach(b => {
+    const fmt = FORMATS[b.format] || FORMATS.other;
+    const fmtLabel = (b.format === 'other' && b.formatOther) ? b.formatOther : fmt.label;
+    const stage = (STAGES.find(s => s.id === b.stage) || {}).label || b.stage || '';
+    asArray(b.milestones).forEach(m => {
+      if(!m || !m.date) return;
+      const days = daysUntil(m.date);
+      const overdueOpen = !m.done && days < 0;
+      if(!overdueOpen && !m.missedReason) return;
+      rows.push([
+        b.title, b.id, b.owner || '', fmtLabel, stage,
+        m.label || '', m.date,
+        overdueOpen ? -days : '',
+        m.done ? 'Yes' : 'No',
+        m.missedReason || '',
+        m.missedReason === 'Other' ? (m.missedReasonOther || '') : '',
+        m.notes || ''
+      ]);
+    });
+  });
+  rows.sort((a, b) => String(a[6]).localeCompare(String(b[6])) || String(a[0]).localeCompare(String(b[0])));
+  return rows;
+}
+function buildMissedMilestonesCsv(){
+  const header = ['Project', 'Build ID', 'Owner', 'Format', 'Stage', 'Milestone', 'Due date',
+                  'Days overdue at export', 'Completed', 'Reason missed', 'Reason details', 'Milestone notes'];
+  const rows = collectMissedMilestoneRows();
+  return { rows, csv: [header, ...rows].map(r => r.map(csvCell).join(',')).join('\r\n') };
+}
+function exportMissedMilestones(){
+  const { rows, csv } = buildMissedMilestonesCsv();
+  if(rows.length === 0){
+    alert('There are no missed milestones to export.');
+    return;
+  }
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `missed-milestones-${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+document.getElementById('exportMissed').addEventListener('click', exportMissedMilestones);
 document.getElementById('activityCloseBtn').addEventListener('click', () => {
   document.getElementById('activityOverlay').classList.remove('show');
 });

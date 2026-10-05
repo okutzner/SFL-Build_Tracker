@@ -46,7 +46,7 @@ document.getElementById('addTeamBtn').addEventListener('click', () => addTeamRow
 // --- Dynamic milestone rows ---
 // Makes a date input open its native picker on any click in the field, not
 // just the small calendar icon. Falls back silently on browsers without
-// showPicker() (e.g. Safari) — the native icon still works there either way.
+// showPicker() (e.g. Safari) (the native icon still works there either way).
 function wireDatePicker(input){
   input.addEventListener('click', () => {
     try { input.showPicker(); } catch(e){ /* unsupported; icon still works */ }
@@ -54,7 +54,25 @@ function wireDatePicker(input){
 }
 document.querySelectorAll('input[type="date"]').forEach(wireDatePicker);
 
-function addMilestoneRow(label = '', date = '', done = false, notes = ''){
+// Local-time YYYY-MM-DD, comparable as a string against a date input's value.
+function todayStr(){
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// The reason block appears once a milestone is missed (its date has passed
+// and it isn't done), and stays visible if a reason has already been saved.
+function updateMissedVisibility(row){
+  const date = row.querySelector('.ms-date').value;
+  const done = row.querySelector('.ms-done').checked;
+  const sel = row.querySelector('.ms-missed-reason');
+  const missed = !!date && date < todayStr() && !done;
+  row.querySelector('.ms-missed-field').style.display = (missed || sel.value) ? '' : 'none';
+  row.querySelector('.ms-missed-other-field').style.display = sel.value === 'Other' ? '' : 'none';
+}
+
+function addMilestoneRow(label = '', date = '', done = false, notes = '', missedReason = '', missedReasonOther = ''){
   const list = document.getElementById('milestoneList');
   const row = document.createElement('div');
   row.className = 'milestone-entry';
@@ -73,12 +91,42 @@ function addMilestoneRow(label = '', date = '', done = false, notes = ''){
     <div class="field ms-notes-field">
       <textarea class="ms-notes" placeholder="Notes for this milestone (optional)" rows="2">${escapeHtml(notes)}</textarea>
     </div>
+    <div class="ms-missed-field" style="display:none;">
+      <div class="ms-missed-row">
+        <div class="field">
+          <label>Reason missed</label>
+          <select class="ms-missed-reason" aria-label="Reason this milestone was missed">
+            <option value="">Select a reason</option>
+            <option value="Client delay">Client delay</option>
+            <option value="Workload">Workload</option>
+            <option value="Technical">Technical</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="field ms-missed-other-field" style="display:none;">
+          <label>Details</label>
+          <input type="text" class="ms-missed-other" placeholder="Describe the reason" aria-label="Details of the reason this milestone was missed">
+        </div>
+      </div>
+    </div>
   `;
   const msBox = row.querySelector('.check-pill');
   row.querySelector('.ms-done').addEventListener('change', e => msBox.classList.toggle('active', e.target.checked));
   if(done) msBox.classList.add('active');
   row.querySelector('.remove-row').addEventListener('click', () => row.remove());
   wireDatePicker(row.querySelector('.ms-date'));
+
+  // Set via properties (not interpolated into the HTML string) so free text
+  // can never be parsed as markup.
+  row.querySelector('.ms-missed-reason').value = missedReason || '';
+  row.querySelector('.ms-missed-other').value = missedReasonOther || '';
+  ['.ms-date', '.ms-done', '.ms-missed-reason'].forEach(sel => {
+    const el = row.querySelector(sel);
+    el.addEventListener('change', () => updateMissedVisibility(row));
+    if(sel === '.ms-date') el.addEventListener('input', () => updateMissedVisibility(row));
+  });
+  updateMissedVisibility(row);
+
   list.appendChild(row);
 }
 document.getElementById('addMilestoneBtn').addEventListener('click', () => addMilestoneRow());
@@ -167,7 +215,7 @@ async function loadForEdit(id){
 
   document.getElementById('fStart').value = b.start || '';
   document.getElementById('fDue').value = b.due || '';
-  asArray(b.milestones).forEach(m => addMilestoneRow(m.label, m.date, m.done, m.notes));
+  asArray(b.milestones).forEach(m => addMilestoneRow(m.label, m.date, m.done, m.notes, m.missedReason, m.missedReasonOther));
 
   document.getElementById('fTags').value = (b.tags || []).join(', ');
   document.getElementById('fLinks').value = b.links || '';
@@ -203,7 +251,11 @@ document.getElementById('projectForm').addEventListener('submit', async (e) => {
     label: row.querySelector('.ms-label').value.trim(),
     date: row.querySelector('.ms-date').value,
     notes: row.querySelector('.ms-notes').value.trim(),
-    done: row.querySelector('.ms-done').checked
+    done: row.querySelector('.ms-done').checked,
+    missedReason: row.querySelector('.ms-missed-reason').value,
+    missedReasonOther: row.querySelector('.ms-missed-reason').value === 'Other'
+      ? row.querySelector('.ms-missed-other').value.trim()
+      : ''
   })).filter(m => m.label || m.date);
 
   const creditEl = document.querySelector('input[name="credit"]:checked');
