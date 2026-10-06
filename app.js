@@ -48,25 +48,31 @@ function truncateLabel(text, max = 20){
 // already be sorted by mOffset ascending. Returns { lanes: number[], laneCount }
 // where lanes[i] is the vertical lane index assigned to milestones[i].
 function assignMilestoneLanes(milestones){
+  // Diamonds sit on the main (lane 0) line and are about 18px wide once
+  // rotated, so a lane 0 label has to stop short of the NEXT diamond as well
+  // as clear other labels. Lower lanes have no diamonds, so only other labels
+  // matter there.
+  const DIAMOND_HALF = 9;
+  const GAP = 12;
   const laneEndX = []; // rightmost occupied x per lane
   const lanes = [];
-  const GAP = 12;
-  milestones.forEach(m => {
-    const start = m.mOffset + 9;
+  milestones.forEach((m, i) => {
+    const start = m.mOffset + DIAMOND_HALF;
     const end = start + estimateLabelWidth(truncateLabel(m.label));
-    let assigned = -1;
-    for(let lane = 0; lane < laneEndX.length; lane++){
-      if(start >= laneEndX[lane] + GAP){ assigned = lane; break; }
+    const next = milestones[i + 1];
+    const lane0Limit = next ? next.mOffset - DIAMOND_HALF - 4 : Infinity;
+    let lane = 0;
+    for(;;){
+      while(laneEndX.length <= lane) laneEndX.push(-Infinity);
+      const free = start >= laneEndX[lane] + GAP;
+      const clearOfDiamonds = lane > 0 || end <= lane0Limit;
+      if(free && clearOfDiamonds) break;
+      lane++;
     }
-    if(assigned === -1){
-      assigned = laneEndX.length;
-      laneEndX.push(end);
-    } else {
-      laneEndX[assigned] = end;
-    }
-    lanes.push(assigned);
+    laneEndX[lane] = end;
+    lanes.push(lane);
   });
-  return { lanes, laneCount: Math.max(laneEndX.length, 1) };
+  return { lanes, laneCount: lanes.length ? Math.max(...lanes) + 1 : 1 };
 }
 let filterFormats = [];   // empty array = no filter, show all
 let filterOwners = [];    // empty array = no filter, show all
@@ -625,6 +631,11 @@ function renderGantt(){
       if(showMilestoneLabels){
         const lane = laneOf(i);
         const top = 12 + lane * LANE_HEIGHT;
+        if(lane > 0){
+          // Small bracket from the diamond down to the label's line, so it's
+          // clear which diamond a lower-line label belongs to.
+          milestonesHtml += `<div class="gantt-milestone-leader" style="left:${m.mOffset}px; top:31px; height:${lane * LANE_HEIGHT - 8}px;"></div>`;
+        }
         milestonesHtml += `<div class="gantt-milestone-label ${m.doneClass}" style="left:${m.mOffset + 9}px; top:${top}px;" title="${escapeHtml(m.label)}">${escapeHtml(truncateLabel(m.label))}</div>`;
       }
     });
