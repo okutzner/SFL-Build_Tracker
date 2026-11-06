@@ -1,7 +1,7 @@
 const STAGES = [
   {id:'idea', label:'Idea', color:'var(--gold)'},
-  {id:'production', label:'In production', color:'var(--teal)'},
   {id:'review', label:'In review', color:'var(--lavender)'},
+  {id:'production', label:'In production', color:'var(--teal)'},
   {id:'published', label:'Published', color:'#7FA6A0'}
 ];
 const FORMATS = {
