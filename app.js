@@ -2,7 +2,8 @@ const STAGES = [
   {id:'idea', label:'Idea', color:'var(--gold)'},
   {id:'review', label:'In review', color:'var(--lavender)'},
   {id:'production', label:'In production', color:'var(--teal)'},
-  {id:'published', label:'Published', color:'#7FA6A0'}
+  {id:'published', label:'Published', color:'#7FA6A0'},
+  {id:'archived', label:'Archive', color:'var(--text-faint)'}
 ];
 const FORMATS = {
   canvas:{ label:'Canvas build', color:'#5B8DEF' },
@@ -110,7 +111,7 @@ function fmtDate(d){
   return dt.toLocaleDateString(undefined,{month:'short', day:'numeric'});
 }
 function isOverdue(d, stage){
-  if(!d || stage==='published') return false;
+  if(!d || stage==='published' || stage==='archived') return false;
   return new Date(d+'T00:00:00') < new Date(new Date().toDateString());
 }
 
@@ -134,6 +135,7 @@ function milestoneDayLabel(days){
 function collectUpcomingMilestones(){
   const list = [];
   builds.forEach(b => {
+    if(b.stage === 'archived') return; // finished and run: its leftover milestones are not actionable
     asArray(b.milestones).forEach((m, mIdx) => {
       if(m.done || !m.date) return;
       list.push({
@@ -350,7 +352,7 @@ document.getElementById('stats').addEventListener('keydown', (e) => {
 });
 
 function renderStats(){
-  const total = builds.length;
+  const total = builds.filter(b => b.stage !== 'archived').length;
   const inReview = builds.filter(b=>b.stage==='review').length;
   const published = builds.filter(b=>b.stage==='published').length;
   const overdueMilestones = collectUpcomingMilestones().filter(m => milestoneBucket(m.days) === 'red').length;
@@ -358,7 +360,7 @@ function renderStats(){
     <div class="stat-card">
       <span class="label">Total builds</span>
       <div class="value gold">${total}</div>
-      <span class="sub">across all stages</span>
+      <span class="sub">excluding archive</span>
     </div>
     <div class="stat-card">
       <span class="label">In review</span>
@@ -497,21 +499,45 @@ function toDate(str){ return new Date(str + 'T00:00:00'); }
 function addDays(date, n){ const d = new Date(date); d.setDate(d.getDate()+n); return d; }
 function daysBetween(a,b){ return Math.round((b-a)/dayMs()); }
 
+// Date (YYYY-MM-DD) of a build's earliest unfinished milestone, or null if it
+// has none. Overdue milestones count, so a build with something already late
+// rises to the top, matching the order of the Upcoming Milestones panel.
+function nextMilestoneDate(b){
+  let next = null;
+  asArray(b.milestones).forEach(m => {
+    if(m && m.date && !m.done && (next === null || m.date < next)) next = m.date;
+  });
+  return next;
+}
+// Soonest next milestone first; builds with no unfinished milestone follow,
+// ordered by due date (then title) so the order is stable.
+function compareByNextMilestone(a, b){
+  const ka = nextMilestoneDate(a), kb = nextMilestoneDate(b);
+  if(ka !== kb){
+    if(ka === null) return 1;
+    if(kb === null) return -1;
+    return ka < kb ? -1 : 1;
+  }
+  return (a.due || '').localeCompare(b.due || '') || (a.title || '').localeCompare(b.title || '');
+}
+
 function renderGantt(){
   const gantt = document.getElementById('gantt');
   const todayMidnight = new Date(new Date().toDateString());
   const isPastDue = (b) => b.due && toDate(b.due) < todayMidnight;
 
   const items = builds
+    .filter(b => b.stage !== 'archived')
     .filter(b => matchesFormatFilter(b))
     .filter(b => matchesOwnerFilter(b.owner))
     .filter(b => b.due)
     .slice()
     .sort((a,b) => {
+      // Builds already past their due date keep their own section at the bottom
       const aPast = isPastDue(a) ? 1 : 0;
       const bPast = isPastDue(b) ? 1 : 0;
       if(aPast !== bPast) return aPast - bPast;
-      return (a.start||a.due).localeCompare(b.start||b.due);
+      return compareByNextMilestone(a, b);
     });
 
   if(items.length === 0){
@@ -916,6 +942,7 @@ function collectMissedMilestoneRows(){
       if(!m || !m.date) return;
       const days = daysUntil(m.date);
       const overdueOpen = !m.done && days < 0;
+      if(b.stage === 'archived' && !m.missedReason) return;
       if(!overdueOpen && !m.missedReason) return;
       rows.push([
         b.title, b.id, b.owner || '', fmtLabel, stage,
